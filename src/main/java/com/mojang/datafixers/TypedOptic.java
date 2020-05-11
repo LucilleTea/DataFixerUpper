@@ -25,6 +25,8 @@ import com.mojang.datafixers.optics.profunctors.Profunctor;
 import com.mojang.datafixers.optics.profunctors.TraversalP;
 import com.mojang.datafixers.types.Type;
 import com.mojang.datafixers.types.templates.TaggedChoice;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Collection;
 import java.util.Map;
@@ -204,7 +206,7 @@ public final class TypedOptic<S, T, A, B> {
         if (!Objects.equals(sType.types().get(key), aType)) {
             throw new IllegalArgumentException("Focused type doesn't match.");
         }
-        final Map<K, Type<?>> newTypes = Maps.newHashMap(sType.types());
+        final Object2ObjectMap<K, Type<?>> newTypes = new Object2ObjectOpenHashMap<>(sType.types());
         newTypes.put(key, bType);
         final Type<Pair<K, ?>> pairType = DSL.taggedChoiceType(sType.getName(), sType.getKeyType(), newTypes);
         return new TypedOptic<>(

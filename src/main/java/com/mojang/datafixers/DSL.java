@@ -33,9 +33,12 @@ import com.mojang.datafixers.types.templates.Sum;
 import com.mojang.datafixers.types.templates.Tag;
 import com.mojang.datafixers.types.templates.TaggedChoice;
 import com.mojang.datafixers.types.templates.TypeTemplate;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Triple;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -203,17 +206,25 @@ public interface DSL {
         return new Tag.TagType<>(name, element);
     }
 
-    static <K> TaggedChoice<K> taggedChoice(final String name, final Type<K> keyType, final Map<K, TypeTemplate> templates) {
+    static <K> TaggedChoice<K> taggedChoice(final String name, final Type<K> keyType, final Object2ObjectMap<K, TypeTemplate> templates) {
         return new TaggedChoice<>(name, keyType, templates);
     }
 
     static <K> TaggedChoice<K> taggedChoiceLazy(final String name, final Type<K> keyType, final Map<K, Supplier<TypeTemplate>> templates) {
-        return taggedChoice(name, keyType, templates.entrySet().stream().map(e -> Pair.of(e.getKey(), e.getValue().get())).collect(Collectors.toMap(Pair::getFirst, Pair::getSecond)));
+        Object2ObjectMap<K, TypeTemplate> map = new Object2ObjectOpenHashMap<>();
+        for (Map.Entry<K, Supplier<TypeTemplate>> e : templates.entrySet()) {
+            if (map.put(e.getKey(), e.getValue().get())!=null) {
+                throw new IllegalStateException("Duplicate key");
+            }
+        }
+        return taggedChoice(name, keyType, map);
     }
 
     @SuppressWarnings("unchecked")
-    static <K> Type<Pair<K, ?>> taggedChoiceType(final String name, final Type<K> keyType, final Map<K, Type<?>> types) {
-        return (Type<Pair<K, ?>>) Instances.TAGGED_CHOICE_TYPE_CACHE.computeIfAbsent(Triple.of(name, keyType, types), k -> new TaggedChoice.TaggedChoiceType<>(k.getLeft(), (Type<K>) k.getMiddle(), (Map<K, Type<?>>) k.getRight()));
+    static <K> Type<Pair<K, ?>> taggedChoiceType(final String name, final Type<K> keyType, final Object2ObjectMap<K, Type<?>> types) {
+        return (Type<Pair<K, ?>>) Instances.TAGGED_CHOICE_TYPE_CACHE.computeIfAbsent(Triple.of(name, keyType, types), k -> {
+            return new TaggedChoice.TaggedChoiceType<>(k.getLeft(), (Type<K>) k.getMiddle(), (Object2ObjectMap<K, Type<?>>) k.getRight());
+        });
     }
 
     static <A, B> Type<Function<A, B>> func(final Type<A> input, final Type<B> output) {
