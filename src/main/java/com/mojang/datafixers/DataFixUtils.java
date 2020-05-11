@@ -53,6 +53,13 @@ public class DataFixUtils {
         return other;
     }
 
+    public static <U> U orElse(final U nullable, final U other) {
+        if (nullable!=null) {
+            return nullable;
+        }
+        return other;
+    }
+
     public static <U> U orElseGet(final Optional<? extends U> optional, final Supplier<? extends U> other) {
         if (optional.isPresent()) {
             return optional.get();

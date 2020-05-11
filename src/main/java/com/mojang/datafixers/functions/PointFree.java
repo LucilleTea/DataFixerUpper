@@ -7,7 +7,6 @@ import com.mojang.datafixers.types.Type;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
 import java.util.function.Function;
 
 public abstract class PointFree<T> {
@@ -30,12 +29,12 @@ public abstract class PointFree<T> {
 
     public abstract Function<DynamicOps<?>, T> eval();
 
-    Optional<? extends PointFree<T>> all(final PointFreeRule rule, final Type<T> type) {
-        return Optional.of(this);
+    PointFree<T> all(final PointFreeRule rule, final Type<T> type) {
+        return this;
     }
 
-    Optional<? extends PointFree<T>> one(final PointFreeRule rule, final Type<T> type) {
-        return Optional.empty();
+    PointFree<T> one(final PointFreeRule rule, final Type<T> type) {
+        return null;
     }
 
     @Override
