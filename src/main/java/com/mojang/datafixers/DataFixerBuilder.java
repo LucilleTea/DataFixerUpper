@@ -62,12 +62,14 @@ public class DataFixerBuilder {
     public DataFixer build(final Executor executor) {
         final DataFixerUpper fixerUpper = new DataFixerUpper(new Int2ObjectAVLTreeMap<>(schemas), new ArrayList<>(globalList), new IntAVLTreeSet(fixerVersions));
 
+        long startTime = System.nanoTime();
+        final List<CompletableFuture<?>> futures = Lists.newArrayList();
         final IntBidirectionalIterator iterator = fixerUpper.fixerVersions().iterator();
         while (iterator.hasNext()) {
             final int versionKey = iterator.nextInt();
             final Schema schema = schemas.get(versionKey);
             for (final String typeName : schema.types()) {
-                CompletableFuture.runAsync(() -> {
+                futures.add(CompletableFuture.runAsync(() -> {
                     final Type<?> dataType = schema.getType(() -> typeName);
                     final TypeRewriteRule rule = fixerUpper.getRule(DataFixUtils.getVersion(versionKey), dataVersion);
                     dataType.rewrite(rule, DataFixerUpper.OPTIMIZATION_RULE);
@@ -75,9 +77,15 @@ public class DataFixerBuilder {
                     LOGGER.error("Unable to build datafixers", e);
                     Runtime.getRuntime().exit(1);
                     return null;
-                });
+                }));
             }
         }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[0]))
+                .thenAccept((res) -> {
+                    long endTime = System.nanoTime();
+                    LOGGER.info("Finished building data fixers after {}ms", (endTime - startTime) / 1_000_000);
+                });
 
         return fixerUpper;
     }
