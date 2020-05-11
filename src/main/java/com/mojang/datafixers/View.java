@@ -11,7 +11,6 @@ import com.mojang.datafixers.types.Type;
 import com.mojang.serialization.DynamicOps;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 
 public final class View<A, B> implements App2<View.Mu, A, B> {
@@ -73,8 +72,12 @@ public final class View<A, B> implements App2<View.Mu, A, B> {
         return Objects.hash(type, newType, function);
     }
 
-    public Optional<? extends View<A, B>> rewrite(final PointFreeRule rule) {
-        return rule.rewrite(DSL.func(type, newType), function()).map(f -> create(type, newType, f));
+    public View<A, B> rewrite(final PointFreeRule rule) {
+        PointFree<Function<A, B>> result = rule.rewrite(DSL.func(type, newType), function());
+        if (result!=null) {
+            return create(type, newType, result);
+        }
+        return null;
     }
 
     public View<A, B> rewriteOrNop(final PointFreeRule rule) {

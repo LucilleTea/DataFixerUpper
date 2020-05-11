@@ -3,12 +3,12 @@
 package com.mojang.datafixers.functions;
 
 import com.mojang.datafixers.DSL;
+import com.mojang.datafixers.DataFixUtils;
 import com.mojang.datafixers.types.Func;
 import com.mojang.datafixers.types.Type;
 import com.mojang.serialization.DynamicOps;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 
 final class Comp<A, B, C> extends PointFree<Function<A, C>> {
@@ -28,20 +28,31 @@ final class Comp<A, B, C> extends PointFree<Function<A, C>> {
     }
 
     @Override
-    public Optional<? extends PointFree<Function<A, C>>> all(final PointFreeRule rule, final Type<Function<A, C>> type) {
+    public PointFree<Function<A, C>> all(final PointFreeRule rule, final Type<Function<A, C>> type) {
         final Func<A, C> funcType = (Func<A, C>) type;
-        return Optional.of(Functions.comp(
-            middleType,
-            rule.rewrite(DSL.func(middleType, funcType.second()), first).map(f -> (PointFree<Function<B, C>>) f).orElse(first),
-            rule.rewrite(DSL.func(funcType.first(), middleType), second).map(f1 -> (PointFree<Function<A, B>>) f1).orElse(second)
-        ));
+        return Functions.comp(
+                middleType,
+                DataFixUtils.orElse(rule.rewrite(DSL.func(middleType, funcType.second()), first), first),
+                DataFixUtils.orElse(rule.rewrite(DSL.func(funcType.first(), middleType), second), second)
+        );
     }
 
     @Override
-    public Optional<? extends PointFree<Function<A, C>>> one(final PointFreeRule rule, final Type<Function<A, C>> type) {
+    public PointFree<Function<A, C>> one(final PointFreeRule rule, final Type<Function<A, C>> type) {
         final Func<A, C> funcType = (Func<A, C>) type;
-        return rule.rewrite(DSL.func(middleType, funcType.second()), first).map(f -> Optional.of(Functions.comp(middleType, f, second)))
-            .orElseGet(() -> rule.rewrite(DSL.func(funcType.first(), middleType), second).map(s -> Functions.comp(middleType, first, s)));
+        final PointFree<Function<B, C>> result1 = rule.rewrite(DSL.func(middleType, funcType.second()), first);
+
+        if (result1!=null) {
+            return Functions.comp(middleType, result1, second);
+        }
+
+        final PointFree<Function<A, B>> result2 = rule.rewrite(DSL.func(funcType.first(), middleType), second);
+
+        if (result2!=null) {
+            return Functions.comp(middleType, first, result2);
+        }
+
+        return null;
     }
 
     @Override

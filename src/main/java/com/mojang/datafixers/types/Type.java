@@ -3,16 +3,7 @@
 package com.mojang.datafixers.types;
 
 import com.google.common.collect.Maps;
-import com.mojang.datafixers.DSL;
-import com.mojang.datafixers.DataFixUtils;
-import com.mojang.datafixers.FieldFinder;
-import com.mojang.datafixers.FunctionType;
-import com.mojang.datafixers.OpticFinder;
-import com.mojang.datafixers.RewriteResult;
-import com.mojang.datafixers.TypeRewriteRule;
-import com.mojang.datafixers.Typed;
-import com.mojang.datafixers.TypedOptic;
-import com.mojang.datafixers.View;
+import com.mojang.datafixers.*;
 import com.mojang.datafixers.functions.Functions;
 import com.mojang.datafixers.functions.PointFreeRule;
 import com.mojang.datafixers.kinds.App;
@@ -187,7 +178,15 @@ public abstract class Type<A> implements App<Type.Mu, A> {
         });
 
         if (ref.getValue() != null) {
-            Optional<RewriteResult<A, ?>> result = rule.rewrite(this).flatMap(r -> r.view().rewrite(fRule).map(view -> RewriteResult.create(view, r.recData())));
+            Optional<RewriteResult<A, ?>> result = rule.rewrite(this).flatMap(r -> {
+                View<A, ?> view = r.view().rewrite(fRule);
+
+                if (view!=null) {
+                    return Optional.of(RewriteResult.create(view, r.recData()));
+                }
+
+                return Optional.empty();
+            });
             REWRITE_CACHE.put(key, result);
             pending.complete(result);
             PENDING_REWRITE_CACHE.remove(key);

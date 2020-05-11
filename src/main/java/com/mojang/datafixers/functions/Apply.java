@@ -3,11 +3,11 @@
 package com.mojang.datafixers.functions;
 
 import com.mojang.datafixers.DSL;
+import com.mojang.datafixers.DataFixUtils;
 import com.mojang.datafixers.types.Type;
 import com.mojang.serialization.DynamicOps;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 
 final class Apply<A, B> extends PointFree<B> {
@@ -32,18 +32,29 @@ final class Apply<A, B> extends PointFree<B> {
     }
 
     @Override
-    public Optional<? extends PointFree<B>> all(final PointFreeRule rule, final Type<B> type) {
-        return Optional.of(Functions.app(
-            rule.rewrite(DSL.func(argType, type), func).map(f1 -> (PointFree<Function<A, B>>) f1).orElse(func),
-            rule.rewrite(argType, arg).map(f -> (PointFree<A>) f).orElse(arg),
-            argType
-        ));
+    public PointFree<B> all(final PointFreeRule rule, final Type<B> type) {
+        return Functions.app(
+                DataFixUtils.orElse(rule.rewrite(DSL.func(argType, type), func), func),
+                DataFixUtils.orElse(rule.rewrite(argType, arg), arg),
+                argType
+        );
     }
 
     @Override
-    public Optional<? extends PointFree<B>> one(final PointFreeRule rule, final Type<B> type) {
-        return rule.rewrite(DSL.func(argType, type), func).map(f -> Optional.of(Functions.app(f, arg, argType)))
-            .orElseGet(() -> rule.rewrite(argType, arg).map(a -> Functions.app(func, a, argType)));
+    public PointFree<B> one(final PointFreeRule rule, final Type<B> type) {
+        final PointFree<Function<A, B>> result1 = rule.rewrite(DSL.func(argType, type), func);
+
+        if (result1!=null) {
+            return Functions.app(result1, arg, argType);
+        }
+
+        final PointFree<A> result2 = rule.rewrite(argType, arg);
+
+        if (result2!=null) {
+            return Functions.app(func, result2, argType);
+        }
+
+        return null;
     }
 
     @Override
