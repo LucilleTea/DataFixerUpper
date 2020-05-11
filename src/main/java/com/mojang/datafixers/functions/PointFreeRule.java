@@ -561,18 +561,14 @@ public interface PointFreeRule {
     }
 
     static PointFreeRule orElse(final PointFreeRule first, final PointFreeRule second) {
-        return new OrElse(first, () -> second);
-    }
-
-    static PointFreeRule orElseStrict(final PointFreeRule first, final Supplier<PointFreeRule> second) {
         return new OrElse(first, second);
     }
 
     final class OrElse implements PointFreeRule {
         protected final PointFreeRule first;
-        protected final Supplier<PointFreeRule> second;
+        protected final PointFreeRule second;
 
-        public OrElse(final PointFreeRule first, final Supplier<PointFreeRule> second) {
+        public OrElse(final PointFreeRule first, final PointFreeRule second) {
             this.first = first;
             this.second = second;
         }
@@ -583,7 +579,7 @@ public interface PointFreeRule {
             if (view!=null) {
                 return view;
             }
-            return second.get().rewrite(type, expr);
+            return second.rewrite(type, expr);
         }
 
         @Override
@@ -604,6 +600,41 @@ public interface PointFreeRule {
         }
     }
 
+
+    final class OrElseStrict implements PointFreeRule {
+        protected final PointFreeRule rule;
+
+        public OrElseStrict(final PointFreeRule rule) {
+            this.rule = rule;
+        }
+
+        @Override
+        public <A> PointFree<A> rewrite(final Type<A> type, final PointFree<A> expr) {
+            final PointFree<A> view = rule.rewrite(type, expr);
+            if (view!=null) {
+                return view;
+            }
+            return expr.one(this, type);
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof OrElse)) {
+                return false;
+            }
+            final OrElse that = (OrElse) obj;
+            return Objects.equals(rule, that.first);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(rule);
+        }
+    }
+
     static PointFreeRule all(final PointFreeRule rule) {
         return new All(rule);
     }
@@ -613,7 +644,7 @@ public interface PointFreeRule {
     }
 
     static PointFreeRule once(final PointFreeRule rule) {
-        return orElseStrict(rule, () -> one(once(rule)));
+        return new OrElseStrict(rule);
     }
 
     static PointFreeRule many(final PointFreeRule rule) {

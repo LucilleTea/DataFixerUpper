@@ -106,19 +106,15 @@ public interface TypeRewriteRule {
     }
 
     static TypeRewriteRule orElse(final TypeRewriteRule first, final TypeRewriteRule second) {
-        return orElse(first, () -> second);
-    }
-
-    static TypeRewriteRule orElse(final TypeRewriteRule first, final Supplier<TypeRewriteRule> second) {
         return new OrElse(first, second);
     }
 
     final class OrElse implements TypeRewriteRule {
         protected final TypeRewriteRule first;
-        protected final Supplier<TypeRewriteRule> second;
+        protected final TypeRewriteRule second;
         private final int hashCode;
 
-        public OrElse(final TypeRewriteRule first, final Supplier<TypeRewriteRule> second) {
+        public OrElse(final TypeRewriteRule first, final TypeRewriteRule second) {
             this.first = first;
             this.second = second;
             hashCode = Objects.hash(first, second);
@@ -130,7 +126,7 @@ public interface TypeRewriteRule {
             if (view.isPresent()) {
                 return view;
             }
-            return second.get().rewrite(type);
+            return second.rewrite(type);
         }
 
         @Override
@@ -157,10 +153,6 @@ public interface TypeRewriteRule {
 
     static TypeRewriteRule one(final TypeRewriteRule rule) {
         return new One(rule);
-    }
-
-    static TypeRewriteRule once(final TypeRewriteRule rule) {
-        return orElse(rule, () -> one(once(rule)));
     }
 
     static TypeRewriteRule checkOnce(final TypeRewriteRule rule, final Consumer<Type<?>> onFail) {
