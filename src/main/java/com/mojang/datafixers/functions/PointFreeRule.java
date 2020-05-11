@@ -401,7 +401,7 @@ public interface PointFreeRule {
                 final Fold<?, ?> firstFold = (Fold<?, ?>) first;
                 final Fold<?, ?> secondFold = (Fold<?, ?>) second;
                 final RecursiveTypeFamily family = firstFold.aType.family();
-                if (Objects.equals(family, secondFold.aType.family()) && firstFold.index==secondFold.index) {
+                if (firstFold.index==secondFold.index && Objects.equals(family, secondFold.aType.family())) {
                     // same fold
                     final List<RewriteResult<?, ?>> newAlgebra = Lists.newArrayList();
 
@@ -410,15 +410,27 @@ public interface PointFreeRule {
                     boolean foundOne = false;
                     for (int i = 0; i < family.size(); i++) {
                         final RewriteResult<?, ?> firstAlgFunc = firstFold.algebra.apply(i);
-                        final RewriteResult<?, ?> secondAlgFunc = secondFold.algebra.apply(i);
                         final boolean firstId = Objects.equals(CompAssocRight.INSTANCE.rewriteOrNop(firstAlgFunc.view()).function(), Functions.id());
-                        final boolean secondId = Objects.equals(secondAlgFunc.view().function(), Functions.id());
 
-                        if (firstId && secondId) {
-                            newAlgebra.add(firstFold.algebra.apply(i));
-                        } else if (!foundOne && !firstId && !secondId) {
-                            newAlgebra.add(getCompose(firstAlgFunc, secondAlgFunc));
-                            foundOne = true;
+                        if (firstId) {
+                            final RewriteResult<?, ?> secondAlgFunc = secondFold.algebra.apply(i);
+                            final boolean secondId = Objects.equals(secondAlgFunc.view().function(), Functions.id());
+
+                            if (secondId) {
+                                newAlgebra.add(firstFold.algebra.apply(i));
+                            } else {
+                                return null;
+                            }
+                        } else if (!foundOne) {
+                            final RewriteResult<?, ?> secondAlgFunc = secondFold.algebra.apply(i);
+                            final boolean secondId = Objects.equals(secondAlgFunc.view().function(), Functions.id());
+
+                            if (!secondId) {
+                                newAlgebra.add(getCompose(firstAlgFunc, secondAlgFunc));
+                                foundOne = true;
+                            } else {
+                                return null;
+                            }
                         } else {
                             return null;
                         }
@@ -448,7 +460,7 @@ public interface PointFreeRule {
                 final Fold<?, ?> firstFold = (Fold<?, ?>) first;
                 final Fold<?, ?> secondFold = (Fold<?, ?>) second;
                 final RecursiveTypeFamily family = firstFold.aType.family();
-                if (Objects.equals(family, secondFold.aType.family()) && firstFold.index==secondFold.index) {
+                if (firstFold.index==secondFold.index && Objects.equals(family, secondFold.aType.family())) {
                     // same fold
                     final List<RewriteResult<?, ?>> newAlgebra = Lists.newArrayList();
 
@@ -471,18 +483,18 @@ public interface PointFreeRule {
                     // TODO: verify that this is enough
                     for (int i = 0; i < family.size(); i++) {
                         final RewriteResult<?, ?> firstAlgFunc = firstFold.algebra.apply(i);
-                        final RewriteResult<?, ?> secondAlgFunc = secondFold.algebra.apply(i);
-                        final PointFree<?> firstF = CompAssocRight.INSTANCE.rewriteOrNop(firstAlgFunc.view()).function();
-                        final PointFree<?> secondF = CompAssocRight.INSTANCE.rewriteOrNop(secondAlgFunc.view()).function();
-                        final boolean firstId = Objects.equals(firstF, Functions.id());
-                        final boolean secondId = Objects.equals(secondF, Functions.id());
-                        if (firstAlgFunc.recData().intersects(secondModifies) || secondAlgFunc.recData().intersects(firstModifies)) {
+                        if (firstAlgFunc.recData().intersects(secondModifies)) {
                             // outer function depends on the result of the inner one
                             return null;
                         }
-                        if (firstId) {
+                        final RewriteResult<?, ?> secondAlgFunc = secondFold.algebra.apply(i);
+                        if (secondAlgFunc.recData().intersects(firstModifies)) {
+                            // outer function depends on the result of the inner one
+                            return null;
+                        }
+                        if (Objects.equals(CompAssocRight.INSTANCE.rewriteOrNop(firstAlgFunc.view()).function(), Functions.id())) {
                             newAlgebra.add(secondAlgFunc);
-                        } else if (secondId) {
+                        } else if (Objects.equals(CompAssocRight.INSTANCE.rewriteOrNop(secondAlgFunc.view()).function(), Functions.id())) {
                             newAlgebra.add(firstAlgFunc);
                         } else {
                             return null;
@@ -491,7 +503,7 @@ public interface PointFreeRule {
                     // have new algebra - make a new fold
 
                     final Algebra algebra = new ListAlgebra("FusedDifferent", newAlgebra);
-                    return (PointFree<A>) family.fold(algebra).apply(firstFold.index).view().function();
+                    return family.fold(algebra).apply(firstFold.index).view().function();
                 }
             }
             return null;
