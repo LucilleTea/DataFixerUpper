@@ -3,6 +3,12 @@
 package com.mojang.datafixers.optics;
 
 class IdAdapter<S, T> implements Adapter<S, T, S, T> {
+    private static final Adapter<?, ?, ?, ?> INSTANCE = new IdAdapter<>();
+
+    private IdAdapter() {
+
+    }
+
     @Override
     public S from(final S s) {
         return s;
@@ -21,5 +27,10 @@ class IdAdapter<S, T> implements Adapter<S, T, S, T> {
     @Override
     public String toString() {
         return "id";
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <S, T> Adapter<S, T, S, T> instance() {
+        return (Adapter<S, T, S, T>) INSTANCE;
     }
 }
