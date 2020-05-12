@@ -244,33 +244,50 @@ public interface PointFreeRule {
         // (ap π1 f)◦(ap π2 g) -> (ap π2 g)◦(ap π1 f)
         @Override
         public <A> PointFree<?> doRewrite(final Type<A> type, final Type<?> middleType, final PointFree<? extends Function<?, ?>> first, final PointFree<? extends Function<?, ?>> second) {
-            if (first instanceof Apply<?, ?> && second instanceof Apply<?, ?>) {
-                final Apply<?, ?> applyFirst = (Apply<?, ?>) first;
-                final Apply<?, ?> applySecond = (Apply<?, ?>) second;
-                final PointFree<? extends Function<?, ?>> firstFunc = applyFirst.func;
-                final PointFree<? extends Function<?, ?>> secondFunc = applySecond.func;
-                if (firstFunc instanceof ProfunctorTransformer<?, ?, ?, ?> && secondFunc instanceof ProfunctorTransformer<?, ?, ?, ?>) {
-                    final ProfunctorTransformer<?, ?, ?, ?> firstOptic = (ProfunctorTransformer<?, ?, ?, ?>) firstFunc;
-                    final ProfunctorTransformer<?, ?, ?, ?> secondOptic = (ProfunctorTransformer<?, ?, ?, ?>) secondFunc;
-
-                    Optic<?, ?, ?, ?, ?> fo = firstOptic.optic;
-                    while (fo instanceof Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) {
-                        fo = ((Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) fo).outer();
-                    }
-
-                    Optic<?, ?, ?, ?, ?> so = secondOptic.optic;
-                    while (so instanceof Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) {
-                        so = ((Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) so).outer();
-                    }
-
-                    if (fo == Optics.proj2() && so == Optics.proj1()) {
-                        final Func<?, ?> firstArg = (Func<?, ?>) applyFirst.argType;
-                        final Func<?, ?> secondArg = (Func<?, ?>) applySecond.argType;
-                        return cap(firstArg, secondArg, applyFirst, applySecond);
-                    }
-                }
+            if (!(first instanceof Apply<?, ?>) || !(second instanceof Apply<?, ?>)) {
+                return null;
             }
-            return null;
+
+            final Apply<?, ?> applyFirst = (Apply<?, ?>) first;
+            final PointFree<? extends Function<?, ?>> firstFunc = applyFirst.func;
+
+            if (!(firstFunc instanceof ProfunctorTransformer<?, ?, ?, ?>)) {
+                return null;
+            }
+
+            final Apply<?, ?> applySecond = (Apply<?, ?>) second;
+            final PointFree<? extends Function<?, ?>> secondFunc = applySecond.func;
+
+            if (!(secondFunc instanceof ProfunctorTransformer<?, ?, ?, ?>)) {
+                return null;
+            }
+
+            final ProfunctorTransformer<?, ?, ?, ?> firstOptic = (ProfunctorTransformer<?, ?, ?, ?>) firstFunc;
+
+            Optic<?, ?, ?, ?, ?> fo = firstOptic.optic;
+            while (fo instanceof Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) {
+                fo = ((Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) fo).outer();
+            }
+
+            if (fo!=Optics.proj2()) {
+                return null;
+            }
+
+            final ProfunctorTransformer<?, ?, ?, ?> secondOptic = (ProfunctorTransformer<?, ?, ?, ?>) secondFunc;
+
+            Optic<?, ?, ?, ?, ?> so = secondOptic.optic;
+            while (so instanceof Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) {
+                so = ((Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) so).outer();
+            }
+
+            if (so!=Optics.proj1()) {
+                return null;
+            }
+
+            final Func<?, ?> firstArg = (Func<?, ?>) applyFirst.argType;
+            final Func<?, ?> secondArg = (Func<?, ?>) applySecond.argType;
+
+            return cap(firstArg, secondArg, applyFirst, applySecond);
         }
 
         @SuppressWarnings("unchecked")
@@ -289,33 +306,49 @@ public interface PointFreeRule {
         // (ap i1 f)◦(ap i2 g) -> (ap i2 g)◦(ap i1 f)
         @Override
         public <A> PointFree<?> doRewrite(final Type<A> type, final Type<?> middleType, final PointFree<? extends Function<?, ?>> first, final PointFree<? extends Function<?, ?>> second) {
-            if (first instanceof Apply<?, ?> && second instanceof Apply<?, ?>) {
-                final Apply<?, ?> applyFirst = (Apply<?, ?>) first;
-                final Apply<?, ?> applySecond = (Apply<?, ?>) second;
-                final PointFree<? extends Function<?, ?>> firstFunc = applyFirst.func;
-                final PointFree<? extends Function<?, ?>> secondFunc = applySecond.func;
-                if (firstFunc instanceof ProfunctorTransformer<?, ?, ?, ?> && secondFunc instanceof ProfunctorTransformer<?, ?, ?, ?>) {
-                    final ProfunctorTransformer<?, ?, ?, ?> firstOptic = (ProfunctorTransformer<?, ?, ?, ?>) firstFunc;
-                    final ProfunctorTransformer<?, ?, ?, ?> secondOptic = (ProfunctorTransformer<?, ?, ?, ?>) secondFunc;
-
-                    Optic<?, ?, ?, ?, ?> fo = firstOptic.optic;
-                    while (fo instanceof Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) {
-                        fo = ((Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) fo).outer();
-                    }
-
-                    Optic<?, ?, ?, ?, ?> so = secondOptic.optic;
-                    while (so instanceof Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) {
-                        so = ((Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) so).outer();
-                    }
-
-                    if (fo == Optics.inj2() && so == Optics.inj1()) {
-                        final Func<?, ?> firstArg = (Func<?, ?>) applyFirst.argType;
-                        final Func<?, ?> secondArg = (Func<?, ?>) applySecond.argType;
-                        return cap(firstArg, secondArg, applyFirst, applySecond);
-                    }
-                }
+            if (!(first instanceof Apply<?, ?>) || !(second instanceof Apply<?, ?>)) {
+                return null;
             }
-            return null;
+
+            final Apply<?, ?> applyFirst = (Apply<?, ?>) first;
+            final PointFree<? extends Function<?, ?>> firstFunc = applyFirst.func;
+
+            if (!(firstFunc instanceof ProfunctorTransformer<?, ?, ?, ?>)) {
+                return null;
+            }
+
+            final Apply<?, ?> applySecond = (Apply<?, ?>) second;
+            final PointFree<? extends Function<?, ?>> secondFunc = applySecond.func;
+
+            if (!(secondFunc instanceof ProfunctorTransformer<?, ?, ?, ?>)) {
+                return null;
+            }
+
+            final ProfunctorTransformer<?, ?, ?, ?> firstOptic = (ProfunctorTransformer<?, ?, ?, ?>) firstFunc;
+
+            Optic<?, ?, ?, ?, ?> fo = firstOptic.optic;
+            while (fo instanceof Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) {
+                fo = ((Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) fo).outer();
+            }
+
+            if (fo!=Optics.inj2()) {
+                return null;
+            }
+
+            final ProfunctorTransformer<?, ?, ?, ?> secondOptic = (ProfunctorTransformer<?, ?, ?, ?>) secondFunc;
+
+            Optic<?, ?, ?, ?, ?> so = secondOptic.optic;
+            while (so instanceof Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) {
+                so = ((Optic.CompositionOptic<?, ?, ?, ?, ?, ?, ?>) so).outer();
+            }
+
+            if (so!=Optics.inj1()) {
+                return null;
+            }
+
+            final Func<?, ?> firstArg = (Func<?, ?>) applyFirst.argType;
+            final Func<?, ?> secondArg = (Func<?, ?>) applySecond.argType;
+            return cap(firstArg, secondArg, applyFirst, applySecond);
         }
 
         @SuppressWarnings("unchecked")
@@ -475,10 +508,6 @@ public interface PointFreeRule {
                         firstModifies.set(i, !firstId);
                         secondModifies.set(i, !secondId);
                     }
-
-                    final BitSet newSet = new BitSet(firstModifies.size());
-                    newSet.or(firstModifies);
-                    newSet.or(secondModifies);
 
                     // if the left function doesn't care about the right modifications, and converse is correct, the merge is valid
                     // TODO: verify that this is enough

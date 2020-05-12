@@ -26,11 +26,6 @@ public final class Proj2<F, G, G2> implements Lens<Pair<F, G>, Pair<F, G2>, G, G
         return "π2";
     }
 
-    @Override
-    public boolean equals(final Object obj) {
-        return obj instanceof Proj2<?, ?, ?>;
-    }
-
     @SuppressWarnings("unchecked")
     public static <F, G2, G> Proj2<F, G, G2> instance() {
         return (Proj2<F, G, G2>) INSTANCE;

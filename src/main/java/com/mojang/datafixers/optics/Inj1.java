@@ -26,11 +26,6 @@ public final class Inj1<F, G, F2> implements Prism<Either<F, G>, Either<F2, G>, 
         return "inj1";
     }
 
-    @Override
-    public boolean equals(final Object obj) {
-        return obj instanceof Inj1<?, ?, ?>;
-    }
-
     @SuppressWarnings("unchecked")
     public static <F, G, F2> Inj1<F, G, F2> instance() {
         return (Inj1<F, G, F2>) INSTANCE;
