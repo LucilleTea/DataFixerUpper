@@ -17,7 +17,6 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import javax.annotation.Nullable;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +35,11 @@ public abstract class Type<A> implements App<Type.Mu, A> {
     private TypeTemplate template;
 
     public RewriteResult<A, ?> rewriteOrNop(final TypeRewriteRule rule) {
-        return DataFixUtils.orElseGet(rule.rewrite(this), () -> RewriteResult.nop(this));
+        RewriteResult<A, ?> result = rule.rewrite(this);
+        if (result != null) {
+            return result;
+        }
+        return RewriteResult.nop(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -65,12 +68,13 @@ public abstract class Type<A> implements App<Type.Mu, A> {
 
     /**
      * run rule on exactly one child
+     * @return
      */
-    public Optional<RewriteResult<A, ?>> one(final TypeRewriteRule rule) {
-        return Optional.empty();
+    public RewriteResult<A, ?> one(final TypeRewriteRule rule) {
+        return null;
     }
 
-    public Optional<RewriteResult<A, ?>> everywhere(final TypeRewriteRule rule, final PointFreeRule optimizationRule, final boolean recurse, final boolean checkIndex) {
+    public RewriteResult<A, ?> everywhere(final TypeRewriteRule rule, final PointFreeRule optimizationRule, final boolean recurse, final boolean checkIndex) {
         final TypeRewriteRule rule2 = TypeRewriteRule.seq(TypeRewriteRule.orElse(rule, TypeRewriteRule.Nop.INSTANCE), TypeRewriteRule.all(TypeRewriteRule.everywhere(rule, optimizationRule, recurse, checkIndex), recurse, checkIndex));
         return rewrite(rule2, optimizationRule);
     }
@@ -125,19 +129,31 @@ public abstract class Type<A> implements App<Type.Mu, A> {
     }
 
     public <T> Pair<T, Optional<?>> read(final DynamicOps<T> ops, final TypeRewriteRule rule, final PointFreeRule fRule, final T input) {
-        return read(ops, input).mapSecond(vo -> vo.map(v ->
-            rewrite(rule, fRule).map(r -> r.view().function().evalCached().apply(ops).apply(v)
-            )
-        ));
+        return read(ops, input).mapSecond(vo -> {
+            return vo.map(v -> {
+                        RewriteResult<A, ?> result = rewrite(rule, fRule);
+
+                        if (result!=null) {
+                            return result.view().function().evalCached().apply(ops).apply(v);
+                        }
+
+                        return null;
+                    }
+            );
+        });
     }
 
     public <T> Optional<T> readAndWrite(final DynamicOps<T> ops, final Type<?> expectedType, final TypeRewriteRule rule, final PointFreeRule fRule, final T input) {
         final Pair<T, Optional<A>> po = read(ops, input);
-        return po.getSecond().flatMap(v ->
-            rewrite(rule, fRule).map(r ->
-                capWrite(ops, expectedType, po.getFirst(), v, r.view())
-            )
-        );
+        return po.getSecond().flatMap(v -> {
+            RewriteResult<A, ?> result = rewrite(rule, fRule);
+
+            if (result != null) {
+                return Optional.of(capWrite(ops, expectedType, po.getFirst(), v, result.view()));
+            }
+
+            return Optional.empty();
+        });
     }
 
     public <T, B> T capWrite(final DynamicOps<T> ops, final Type<?> expectedType, final T rest, final A value, final View<A, B> f) {
@@ -148,14 +164,15 @@ public abstract class Type<A> implements App<Type.Mu, A> {
     }
 
     @SuppressWarnings("unchecked")
-    public Optional<RewriteResult<A, ?>> rewrite(final TypeRewriteRule rule, final PointFreeRule fRule) {
+    public RewriteResult<A, ?> rewrite(final TypeRewriteRule rule, final PointFreeRule fRule) {
         final Triple<Type<?>, TypeRewriteRule, PointFreeRule> key = Triple.of(this, rule, fRule);
         // This code under contention would generate multiple rewrites, so we use CompletableFuture for pending rewrites.
         // We can not use computeIfAbsent because this is a recursive call that will block server startup
         // during the Bootstrap phrase that's trying to pre cache these rewrites.
         final Optional<? extends RewriteResult<?, ?>> rewrite = REWRITE_CACHE.get(key);
+        //noinspection OptionalAssignedToNull
         if (rewrite != null) {
-            return (Optional<RewriteResult<A, ?>>) rewrite;
+            return (RewriteResult<A, ?>) rewrite.orElse(null);
         }
         final AtomicReference<CompletableFuture<Optional<? extends RewriteResult<?, ?>>>> ref = new AtomicReference<>();
 
@@ -166,21 +183,23 @@ public abstract class Type<A> implements App<Type.Mu, A> {
         });
 
         if (ref.get() != null) {
-            Optional<RewriteResult<A, ?>> result = rule.rewrite(this).flatMap(r -> {
-                View<A, ?> view = r.view().rewrite(fRule);
+            RewriteResult<A, ?> result = rule.rewrite(this);
+            Optional<RewriteResult<A, ?>> opt = Optional.empty();;
 
-                if (view!=null) {
-                    return Optional.of(RewriteResult.create(view, r.recData()));
+            if (result != null) {
+                View<A, ?> view = result.view().rewrite(fRule);
+
+                if (view != null) {
+                    opt = Optional.of(RewriteResult.create(view, result.recData()));
                 }
+            }
 
-                return Optional.empty();
-            });
-            REWRITE_CACHE.put(key, result);
-            pending.complete(result);
+            REWRITE_CACHE.put(key, opt);
+            pending.complete(opt);
             PENDING_REWRITE_CACHE.remove(key);
-            return result;
+            return opt.orElse(null);
         }
-        return (Optional<RewriteResult<A, ?>>) pending.join();
+        return (RewriteResult<A, ?>) pending.join().orElse(null);
     }
 
     public <FT, FR> Type<?> getSetType(final OpticFinder<FT> optic, final Type<FR> newType) {
@@ -250,11 +269,11 @@ public abstract class Type<A> implements App<Type.Mu, A> {
     }
 
     @SuppressWarnings("unchecked")
-    public <B> Optional<RewriteResult<A, ?>> ifSame(final Type<B> type, final RewriteResult<B, ?> value) {
+    public <B> RewriteResult<A, ?> ifSame(final Type<B> type, final RewriteResult<B, ?> value) {
         if (equals(type, true, true)) {
-            return Optional.of((RewriteResult<A, ?>) value);
+            return (RewriteResult<A, ?>) value;
         }
-        return Optional.empty();
+        return null;
     }
 
     @Override

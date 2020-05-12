@@ -142,9 +142,12 @@ public final class Tag implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<A, ?>> one(final TypeRewriteRule rule) {
-            final Optional<RewriteResult<A, ?>> view = rule.rewrite(element);
-            return view.map(instance -> RewriteResult.create(cap(instance.view()), instance.recData()));
+        public RewriteResult<A, ?> one(final TypeRewriteRule rule) {
+            final RewriteResult<A, ?> view = rule.rewrite(element);
+            if (view != null) {
+                return RewriteResult.create(cap(view.view()), view.recData());
+            }
+            return null;
         }
 
         @Override

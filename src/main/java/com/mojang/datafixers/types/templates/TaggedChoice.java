@@ -125,10 +125,10 @@ public final class TaggedChoice<K> implements TypeTemplate {
         public RewriteResult<Pair<K, ?>, ?> all(final TypeRewriteRule rule, final boolean recurse, final boolean checkIndex) {
             Object2ObjectMap<K, RewriteResult<?, ?>> map = new Object2ObjectOpenHashMap<>();
             for (Map.Entry<K, Type<?>> e : Object2ObjectMaps.fastIterable(types)) {
-                Optional<? extends RewriteResult<?, ?>> k = rule.rewrite(e.getValue());
+                RewriteResult<?, ?> k = rule.rewrite(e.getValue());
 
-                if (k.isPresent() && !Functions.isId(k.get().view().function())) {
-                    if (map.put(e.getKey(), k.get())!=null) {
+                if (k != null && !Functions.isId(k.view().function())) {
+                    if (map.put(e.getKey(), k)!=null) {
                         throw new IllegalStateException("Duplicate key");
                     }
                 }
@@ -153,14 +153,14 @@ public final class TaggedChoice<K> implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<Pair<K, ?>, ?>> one(final TypeRewriteRule rule) {
+        public RewriteResult<Pair<K, ?>, ?> one(final TypeRewriteRule rule) {
             for (final Map.Entry<K, Type<?>> entry : Object2ObjectMaps.fastIterable(types)) {
-                final Optional<? extends RewriteResult<?, ?>> elementResult = rule.rewrite(entry.getValue());
-                if (elementResult.isPresent()) {
-                    return Optional.of(elementResult(entry.getKey(), this, elementResult.get()));
+                final RewriteResult<?, ?> elementResult = rule.rewrite(entry.getValue());
+                if (elementResult != null) {
+                    return elementResult(entry.getKey(), this, elementResult);
                 }
             }
-            return Optional.empty();
+            return null;
         }
 
         @Override

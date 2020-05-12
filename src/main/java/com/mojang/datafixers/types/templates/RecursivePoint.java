@@ -16,7 +16,6 @@ import com.mojang.datafixers.types.DynamicOps;
 import com.mojang.datafixers.types.Type;
 import com.mojang.datafixers.types.families.RecursiveTypeFamily;
 import com.mojang.datafixers.types.families.TypeFamily;
-import org.apache.commons.lang3.ObjectUtils;
 
 import javax.annotation.Nullable;
 import java.util.BitSet;
@@ -145,16 +144,17 @@ public final class RecursivePoint implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<A, ?>> one(final TypeRewriteRule rule) {
+        public RewriteResult<A, ?> one(final TypeRewriteRule rule) {
             return unfold().one(rule);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Optional<RewriteResult<A, ?>> everywhere(final TypeRewriteRule rule, final PointFreeRule optimizationRule, final boolean recurse, final boolean checkIndex) {
+        public RewriteResult<A, ?> everywhere(final TypeRewriteRule rule, final PointFreeRule optimizationRule, final boolean recurse, final boolean checkIndex) {
             if (recurse) {
-                return family.everywhere(this.index, rule, optimizationRule).map(view -> (RewriteResult<A, ?>) view);
+                return (RewriteResult<A, ?>) family.everywhere(this.index, rule, optimizationRule).orElse(null);
             }
-            return Optional.of(RewriteResult.nop(this));
+            return RewriteResult.nop(this);
         }
 
         @Override

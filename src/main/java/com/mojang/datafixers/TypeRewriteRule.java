@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public interface TypeRewriteRule {
-    <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type);
+    <A> RewriteResult<A, ?> rewrite(final Type<A> type);
 
     static TypeRewriteRule nop() {
         return Nop.INSTANCE;
@@ -24,8 +24,8 @@ public interface TypeRewriteRule {
         INSTANCE;
 
         @Override
-        public <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type) {
-            return Optional.of(RewriteResult.nop(type));
+        public <A> RewriteResult<A, ?> rewrite(final Type<A> type) {
+            return RewriteResult.nop(type);
         }
 
         @Override
@@ -71,20 +71,24 @@ public interface TypeRewriteRule {
         }
 
         @Override
-        public <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type) {
+        public <A> RewriteResult<A, ?> rewrite(final Type<A> type) {
             RewriteResult<A, ?> result = RewriteResult.nop(type);
             for (final TypeRewriteRule rule : rules) {
-                final Optional<RewriteResult<A, ?>> newResult = cap1(rule, result);
-                if (!newResult.isPresent()) {
-                    return Optional.empty();
+                final RewriteResult<A, ?> newResult = cap1(rule, result);
+                if (newResult == null) {
+                    return null;
                 }
-                result = newResult.get();
+                result = newResult;
             }
-            return Optional.of(result);
+            return result;
         }
 
-        protected <A, B> Optional<RewriteResult<A, ?>> cap1(final TypeRewriteRule rule, final RewriteResult<A, B> f) {
-            return rule.rewrite(f.view.newType).map(s -> s.compose(f));
+        protected <A, B> RewriteResult<A, ?> cap1(final TypeRewriteRule rule, final RewriteResult<A, B> f) {
+            RewriteResult<B, ?> result = rule.rewrite(f.view.newType);
+            if (result != null) {
+                return result.compose(f);
+            }
+            return null;
         }
 
         @Override
@@ -121,9 +125,9 @@ public interface TypeRewriteRule {
         }
 
         @Override
-        public <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type) {
-            final Optional<RewriteResult<A, ?>> view = first.rewrite(type);
-            if (view.isPresent()) {
+        public <A> RewriteResult<A, ?> rewrite(final Type<A> type) {
+            final RewriteResult<A, ?> view = first.rewrite(type);
+            if (view != null) {
                 return view;
             }
             return second.rewrite(type);
@@ -183,8 +187,8 @@ public interface TypeRewriteRule {
         }
 
         @Override
-        public <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type) {
-            return Optional.of(type.all(rule, recurse, checkIndex));
+        public <A> RewriteResult<A, ?> rewrite(final Type<A> type) {
+            return type.all(rule, recurse, checkIndex);
         }
 
         @Override
@@ -215,7 +219,7 @@ public interface TypeRewriteRule {
         }
 
         @Override
-        public <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type) {
+        public <A> RewriteResult<A, ?> rewrite(final Type<A> type) {
             return type.one(rule);
         }
 
@@ -249,9 +253,9 @@ public interface TypeRewriteRule {
         }
 
         @Override
-        public <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type) {
-            final Optional<RewriteResult<A, ?>> result = rule.rewrite(type);
-            if (!result.isPresent() || Functions.isId(result.get().view.function())) {
+        public <A> RewriteResult<A, ?> rewrite(final Type<A> type) {
+            final RewriteResult<A, ?> result = rule.rewrite(type);
+            if (result == null || Functions.isId(result.view.function())) {
                 onFail.accept(type);
             }
             return result;
@@ -287,7 +291,7 @@ public interface TypeRewriteRule {
         }
 
         @Override
-        public <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type) {
+        public <A> RewriteResult<A, ?> rewrite(final Type<A> type) {
             return type.everywhere(rule, optimizationRule, recurse, checkIndex);
         }
 
@@ -321,7 +325,7 @@ public interface TypeRewriteRule {
         }
 
         @Override
-        public <A> Optional<RewriteResult<A, ?>> rewrite(final Type<A> type) {
+        public <A> RewriteResult<A, ?> rewrite(final Type<A> type) {
             return type.ifSame(targetType, value);
         }
 

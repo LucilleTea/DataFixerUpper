@@ -132,16 +132,20 @@ public final class Check implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<A, ?>> everywhere(final TypeRewriteRule rule, final PointFreeRule optimizationRule, final boolean recurse, final boolean checkIndex) {
+        public RewriteResult<A, ?> everywhere(final TypeRewriteRule rule, final PointFreeRule optimizationRule, final boolean recurse, final boolean checkIndex) {
             if (checkIndex && index != expectedIndex) {
-                return Optional.empty();
+                return null;
             }
             return super.everywhere(rule, optimizationRule, recurse, checkIndex);
         }
 
         @Override
-        public Optional<RewriteResult<A, ?>> one(final TypeRewriteRule rule) {
-            return rule.rewrite(delegate).map(view -> fix(this, view));
+        public RewriteResult<A, ?> one(final TypeRewriteRule rule) {
+            RewriteResult<A, ?> result = rule.rewrite(delegate);
+            if (result != null) {
+                return fix(this, result);
+            }
+            return null;
         }
 
         @Override

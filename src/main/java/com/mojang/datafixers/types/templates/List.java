@@ -24,7 +24,6 @@ import com.mojang.datafixers.types.families.TypeFamily;
 import com.mojang.datafixers.util.Pool;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
@@ -116,8 +115,12 @@ public final class List implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<java.util.List<A>, ?>> one(final TypeRewriteRule rule) {
-            return rule.rewrite(element).map(this::fix);
+        public RewriteResult<java.util.List<A>, ?> one(final TypeRewriteRule rule) {
+            RewriteResult<A, ?> result = rule.rewrite(element);
+            if (result != null) {
+                return this.fix(result);
+            }
+            return null;
         }
 
         @Override

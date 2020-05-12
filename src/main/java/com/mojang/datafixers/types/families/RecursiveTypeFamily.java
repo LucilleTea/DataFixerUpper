@@ -182,10 +182,10 @@ public final class RecursiveTypeFamily implements TypeFamily {
         // GB -> B
         final RewriteResult<A, B> newView = RewriteResult.create(newType.in(), new BitSet()).compose((RewriteResult<A, B>) view);
         // B -> B
-        final Optional<RewriteResult<B, ?>> rewrite = rule.rewrite(newView.view().newType());
-        if (rewrite.isPresent() && !Functions.isId(rewrite.get().view().function())) {
+        final RewriteResult<B, ?> rewrite = rule.rewrite(newView.view().newType());
+        if (rewrite != null && !Functions.isId(rewrite.view().function())) {
             nop = false;
-            view = rewrite.get().compose((RewriteResult<A, B>) newView);
+            view = rewrite.compose((RewriteResult<A, B>) newView);
         }
         view = RewriteResult.create(view.view().rewriteOrNop(optimizationRule), view.recData());
         views.add(view);

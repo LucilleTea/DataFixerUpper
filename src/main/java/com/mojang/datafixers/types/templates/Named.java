@@ -97,9 +97,12 @@ public final class Named implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<Pair<String, A>, ?>> one(final TypeRewriteRule rule) {
-            final Optional<RewriteResult<A, ?>> view = rule.rewrite(element);
-            return view.map(instance -> fix(this, instance));
+        public RewriteResult<Pair<String, A>, ?> one(final TypeRewriteRule rule) {
+            final RewriteResult<A, ?> view = rule.rewrite(element);
+            if (view != null) {
+                return fix(this, view);
+            }
+            return null;
         }
 
         @Override

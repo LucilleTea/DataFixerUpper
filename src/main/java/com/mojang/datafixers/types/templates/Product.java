@@ -160,11 +160,28 @@ public final class Product implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<Pair<F, G>, ?>> one(final TypeRewriteRule rule) {
-            return DataFixUtils.or(
-                rule.rewrite(first).map(v -> fixLeft(this, first, second, v)),
-                () -> rule.rewrite(second).map(v -> fixRight(this, first, second, v))
-            );
+        public RewriteResult<Pair<F, G>, ?> one(final TypeRewriteRule rule) {
+            RewriteResult<F, ?> firstR = rule.rewrite(first);
+
+            if (firstR != null) {
+                RewriteResult<Pair<F, G>, ? extends Pair<?, G>> firstRF = fixLeft(this, first, second, firstR);
+
+                if (firstRF != null) {
+                    return firstRF;
+                }
+            }
+
+            RewriteResult<G, ?> secondR = rule.rewrite(second);
+
+            if (secondR != null) {
+                RewriteResult<Pair<F, G>, ? extends Pair<F, ?>> secondRF = fixRight(this, first, second, secondR);
+
+                if (secondRF != null) {
+                    return secondRF;
+                }
+            }
+
+            return null;
         }
 
         private static <F, G, F2> RewriteResult<Pair<F, G>, Pair<F2, G>> fixLeft(final Type<Pair<F, G>> type, final Type<F> first, final Type<G> second, final RewriteResult<F, F2> view) {

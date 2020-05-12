@@ -108,8 +108,12 @@ public final class Hook implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<A, ?>> one(final TypeRewriteRule rule) {
-            return rule.rewrite(delegate).map(view -> fix(this, view));
+        public RewriteResult<A, ?> one(final TypeRewriteRule rule) {
+            RewriteResult<A, ?> result = rule.rewrite(delegate);
+            if (result != null) {
+                return fix(this, result);
+            }
+            return null;
         }
 
         @Override

@@ -115,11 +115,28 @@ public final class CompoundList implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<List<Pair<K, V>>, ?>> one(final TypeRewriteRule rule) {
-            return DataFixUtils.or(
-                rule.rewrite(key).map(v -> fixKeys(this, key, element, v)),
-                () -> rule.rewrite(element).map(v -> fixValues(this, key, element, v))
-            );
+        public RewriteResult<List<Pair<K, V>>, ?> one(final TypeRewriteRule rule) {
+            RewriteResult<K, ?> firstR = rule.rewrite(key);
+
+            if (firstR != null) {
+                RewriteResult<List<Pair<K, V>>, ? extends List<? extends Pair<?, V>>> firstRF = fixKeys(this, key, element, firstR);
+
+                if (firstRF != null) {
+                    return firstRF;
+                }
+            }
+
+            RewriteResult<V, ?> secondR = rule.rewrite(element);
+
+            if (secondR != null) {
+                RewriteResult<List<Pair<K, V>>, ? extends List<? extends Pair<K, ?>>> secondRF = fixValues(this, key, element, secondR);
+
+                if (secondRF != null) {
+                    return secondRF;
+                }
+            }
+
+            return null;
         }
 
         private static <K, V, K2> RewriteResult<List<Pair<K, V>>, List<Pair<K2, V>>> fixKeys(final Type<List<Pair<K, V>>> type, final Type<K> first, final Type<V> second, final RewriteResult<K, K2> view) {

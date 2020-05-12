@@ -160,11 +160,28 @@ public final class Sum implements TypeTemplate {
         }
 
         @Override
-        public Optional<RewriteResult<Either<F, G>, ?>> one(final TypeRewriteRule rule) {
-            return DataFixUtils.or(
-                rule.rewrite(first).map(v -> fixLeft(this, first, second, v)),
-                () -> rule.rewrite(second).map(v -> fixRight(this, first, second, v))
-            );
+        public RewriteResult<Either<F, G>, ?> one(final TypeRewriteRule rule) {
+            RewriteResult<F, ?> firstR = rule.rewrite(first);
+
+            if (firstR != null) {
+                RewriteResult<Either<F, G>, ? extends Either<?, G>> firstRF = fixLeft(this, first, second, firstR);
+
+                if (firstRF != null) {
+                    return firstRF;
+                }
+            }
+
+            RewriteResult<G, ?> secondR = rule.rewrite(second);
+
+            if (secondR != null) {
+                RewriteResult<Either<F, G>, ? extends Either<F, ?>> secondRF = fixRight(this, first, second, secondR);
+
+                if (secondRF != null) {
+                    return secondRF;
+                }
+            }
+
+            return null;
         }
 
         private static <F, G, F2> RewriteResult<Either<F, G>, Either<F2, G>> fixLeft(final Type<Either<F, G>> type, final Type<F> first, final Type<G> second, final RewriteResult<F, F2> view) {
