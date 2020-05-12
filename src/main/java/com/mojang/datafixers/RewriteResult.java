@@ -30,7 +30,8 @@ public final class RewriteResult<A, B> {
         final BitSet newData;
         if (view.type() instanceof RecursivePoint.RecursivePointType<?> && that.view.type() instanceof RecursivePoint.RecursivePointType<?>) {
             // same family, merge results - not exactly accurate, but should be good enough
-            newData = ObjectUtils.clone(recData);
+            newData = new BitSet(recData.size());
+            newData.or(recData);
             newData.or(that.recData);
         } else {
             newData = recData;
