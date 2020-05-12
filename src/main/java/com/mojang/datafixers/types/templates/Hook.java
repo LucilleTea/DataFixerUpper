@@ -19,13 +19,14 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public final class Hook implements TypeTemplate {
     private final TypeTemplate element;
     private final HookFunction preRead;
     private final HookFunction postWrite;
 
-    public Hook(final TypeTemplate element, final HookFunction preRead, final HookFunction postWrite) {
+    private Hook(final TypeTemplate element, final HookFunction preRead, final HookFunction postWrite) {
         this.element = element;
         this.preRead = preRead;
         this.postWrite = postWrite;
@@ -83,7 +84,7 @@ public final class Hook implements TypeTemplate {
             return false;
         }
         final Hook that = (Hook) obj;
-        return Objects.equals(element, that.element) && Objects.equals(preRead, that.preRead) && Objects.equals(postWrite, that.postWrite);
+        return element == that.element && Objects.equals(preRead, that.preRead) && Objects.equals(postWrite, that.postWrite);
     }
 
     @Override
@@ -197,6 +198,38 @@ public final class Hook implements TypeTemplate {
         @Override
         public int hashCode() {
             return Objects.hash(delegate, preRead, postWrite);
+        }
+    }
+
+    public static class CreateInfo implements Supplier<Hook> {
+        private final TypeTemplate element;
+        private final HookFunction preRead;
+        private final HookFunction postWrite;
+
+        public CreateInfo(TypeTemplate element, HookFunction preRead, HookFunction postWrite) {
+            this.element = element;
+            this.preRead = preRead;
+            this.postWrite = postWrite;
+        }
+
+        @Override
+        public Hook get() {
+            return new Hook(this.element, this.preRead, this.postWrite);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return element.equals(that.element) &&
+                    preRead.equals(that.preRead) &&
+                    postWrite.equals(that.postWrite);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(element, preRead, postWrite);
         }
     }
 }

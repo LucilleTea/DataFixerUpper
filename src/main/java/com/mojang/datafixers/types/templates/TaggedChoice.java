@@ -43,6 +43,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class TaggedChoice<K> implements TypeTemplate {
@@ -54,7 +55,7 @@ public final class TaggedChoice<K> implements TypeTemplate {
     private final Map<Pair<TypeFamily, Integer>, Type<?>> types = Maps.newConcurrentMap();
     private final int size;
 
-    public TaggedChoice(final String name, final Type<K> keyType, final Object2ObjectMap<K, TypeTemplate> templates) {
+    private TaggedChoice(final String name, final Type<K> keyType, final Object2ObjectMap<K, TypeTemplate> templates) {
         this.name = name;
         this.keyType = keyType;
         this.templates = templates;
@@ -495,6 +496,38 @@ public final class TaggedChoice<K> implements TypeTemplate {
             public int hashCode() {
                 return Objects.hash(results);
             }
+        }
+    }
+
+    public static class CreateInfo<K> implements Supplier<TaggedChoice<?>> {
+        private final String name;
+        private final Type<K> keyType;
+        private final Object2ObjectMap<K, TypeTemplate> templates;
+
+        public CreateInfo(String name, Type<K> keyType, Object2ObjectMap<K, TypeTemplate> templates) {
+            this.name = name;
+            this.keyType = keyType;
+            this.templates = templates;
+        }
+
+        @Override
+        public TaggedChoice<K> get() {
+            return new TaggedChoice<>(name, keyType, templates);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo<?> that = (CreateInfo<?>) o;
+            return name.equals(that.name) &&
+                    keyType.equals(that.keyType) &&
+                    templates.equals(that.templates);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, keyType, templates);
         }
     }
 }

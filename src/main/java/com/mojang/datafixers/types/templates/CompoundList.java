@@ -24,6 +24,7 @@ import com.mojang.datafixers.types.DynamicOps;
 import com.mojang.datafixers.types.Type;
 import com.mojang.datafixers.types.families.RecursiveTypeFamily;
 import com.mojang.datafixers.types.families.TypeFamily;
+import com.mojang.datafixers.util.Pool;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -32,12 +33,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public final class CompoundList implements TypeTemplate {
     private final TypeTemplate key;
     private final TypeTemplate element;
 
-    public CompoundList(final TypeTemplate key, final TypeTemplate element) {
+    private CompoundList(final TypeTemplate key, final TypeTemplate element) {
         this.key = key;
         this.element = element;
     }
@@ -70,7 +72,7 @@ public final class CompoundList implements TypeTemplate {
 
     @Override
     public <FT, FR> Either<TypeTemplate, Type.FieldNotFoundException> findFieldOrType(final int index, @Nullable final String name, final Type<FT> type, final Type<FR> resultType) {
-        return element.findFieldOrType(index, name, type, resultType).mapLeft(element1 -> new CompoundList(key, element1));
+        return element.findFieldOrType(index, name, type, resultType).mapLeft(element1 -> Pool.COMPOUND_LIST_POOL.create(new CompoundList.CreateInfo(key, element1)));
     }
 
     @Override
@@ -88,7 +90,7 @@ public final class CompoundList implements TypeTemplate {
 
     @Override
     public boolean equals(final Object obj) {
-        return obj instanceof CompoundList && Objects.equals(element, ((CompoundList) obj).element);
+        return obj instanceof CompoundList && element == ((CompoundList) obj).element;
     }
 
     @Override
@@ -144,7 +146,7 @@ public final class CompoundList implements TypeTemplate {
 
         @Override
         public TypeTemplate buildTemplate() {
-            return new CompoundList(key.template(), element.template());
+            return Pool.COMPOUND_LIST_POOL.create(new CompoundList.CreateInfo(key.template(), element.template()));
         }
 
         @Override
@@ -222,6 +224,35 @@ public final class CompoundList implements TypeTemplate {
 
         public Type<V> getElement() {
             return element;
+        }
+    }
+
+    public static class CreateInfo implements Supplier<CompoundList> {
+        private final TypeTemplate key;
+        private final TypeTemplate element;
+
+        public CreateInfo(TypeTemplate key, TypeTemplate element) {
+            this.key = key;
+            this.element = element;
+        }
+
+        @Override
+        public CompoundList get() {
+            return new CompoundList(this.key, this.element);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return key.equals(that.key) &&
+                    element.equals(that.element);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key, element);
         }
     }
 }

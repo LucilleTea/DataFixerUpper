@@ -21,18 +21,20 @@ import com.mojang.datafixers.types.DynamicOps;
 import com.mojang.datafixers.types.Type;
 import com.mojang.datafixers.types.families.RecursiveTypeFamily;
 import com.mojang.datafixers.types.families.TypeFamily;
+import com.mojang.datafixers.util.Pool;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class List implements TypeTemplate {
     private final TypeTemplate element;
 
-    public List(final TypeTemplate element) {
+    private List(final TypeTemplate element) {
         this.element = element;
     }
 
@@ -79,7 +81,7 @@ public final class List implements TypeTemplate {
 
     @Override
     public <FT, FR> Either<TypeTemplate, Type.FieldNotFoundException> findFieldOrType(final int index, @Nullable final String name, final Type<FT> type, final Type<FR> resultType) {
-        return element.findFieldOrType(index, name, type, resultType).mapLeft(List::new);
+        return element.findFieldOrType(index, name, type, resultType).mapLeft(e -> Pool.LIST_POOL.create(new List.CreateInfo(e)));
     }
 
     @Override
@@ -96,7 +98,7 @@ public final class List implements TypeTemplate {
 
     @Override
     public boolean equals(final Object obj) {
-        return obj instanceof List && Objects.equals(element, ((List) obj).element);
+        return obj instanceof List && element == ((List) obj).element;
     }
 
     @Override
@@ -190,6 +192,32 @@ public final class List implements TypeTemplate {
 
         public Type<A> getElement() {
             return element;
+        }
+    }
+
+    public static class CreateInfo implements Supplier<List> {
+        private final TypeTemplate element;
+
+        public CreateInfo(TypeTemplate element) {
+            this.element = element;
+        }
+
+        @Override
+        public List get() {
+            return new List(this.element);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return element.equals(that.element);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(element);
         }
     }
 }

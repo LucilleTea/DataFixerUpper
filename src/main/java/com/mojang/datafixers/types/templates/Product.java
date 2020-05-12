@@ -25,17 +25,19 @@ import com.mojang.datafixers.types.DynamicOps;
 import com.mojang.datafixers.types.Type;
 import com.mojang.datafixers.types.families.RecursiveTypeFamily;
 import com.mojang.datafixers.types.families.TypeFamily;
+import com.mojang.datafixers.util.Pool;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public final class Product implements TypeTemplate {
     private final TypeTemplate f;
     private final TypeTemplate g;
 
-    public Product(final TypeTemplate f, final TypeTemplate g) {
+    private Product(final TypeTemplate f, final TypeTemplate g) {
         this.f = f;
         this.g = g;
     }
@@ -113,8 +115,8 @@ public final class Product implements TypeTemplate {
     public <FT, FR> Either<TypeTemplate, Type.FieldNotFoundException> findFieldOrType(final int index, @Nullable final String name, final Type<FT> type, final Type<FR> resultType) {
         final Either<TypeTemplate, Type.FieldNotFoundException> either = f.findFieldOrType(index, name, type, resultType);
         return either.map(
-            f2 -> Either.left(new Product(f2, g)),
-            r -> g.findFieldOrType(index, name, type, resultType).mapLeft(g2 -> new Product(f, g2))
+            f2 -> Either.left(Pool.PRODUCT_POOL.create(new Product.CreateInfo(f2, g))),
+            r -> g.findFieldOrType(index, name, type, resultType).mapLeft(g2 -> Pool.PRODUCT_POOL.create(new Product.CreateInfo(f, g2)))
         );
     }
 
@@ -140,7 +142,7 @@ public final class Product implements TypeTemplate {
             return false;
         }
         final Product that = (Product) obj;
-        return Objects.equals(f, that.f) && Objects.equals(g, that.g);
+        return f == that.f && g == that.g;
     }
 
     @Override
@@ -277,6 +279,35 @@ public final class Product implements TypeTemplate {
 
         private <FT, G2, FR> TypedOptic<Pair<F, G>, ?, FT, FR> capRight(final TypedOptic<G, G2, FT, FR> optic) {
             return TypedOptic.proj2(first, optic.sType(), optic.tType()).compose(optic);
+        }
+    }
+
+    public static class CreateInfo implements Supplier<Product> {
+        private final TypeTemplate f;
+        private final TypeTemplate g;
+
+        public CreateInfo(TypeTemplate f, TypeTemplate g) {
+            this.f = f;
+            this.g = g;
+        }
+
+        @Override
+        public Product get() {
+            return new Product(this.f, this.g);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return f.equals(that.f) &&
+                    g.equals(that.g);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(f, g);
         }
     }
 }

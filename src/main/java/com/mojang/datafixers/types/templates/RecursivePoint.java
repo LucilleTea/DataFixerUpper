@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 public final class RecursivePoint implements TypeTemplate {
     private final int index;
 
-    public RecursivePoint(final int index) {
+    private RecursivePoint(final int index) {
         this.index = index;
     }
 
@@ -276,6 +276,32 @@ public final class RecursivePoint implements TypeTemplate {
 
         public View<A, A> out() {
             return View.create(this, unfold(), Functions.out(this));
+        }
+    }
+
+    public static class CreateInfo implements Supplier<RecursivePoint> {
+        private final int index;
+
+        public CreateInfo(int index) {
+            this.index = index;
+        }
+
+        @Override
+        public RecursivePoint get() {
+            return new RecursivePoint(this.index);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return index==that.index;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(index);
         }
     }
 }

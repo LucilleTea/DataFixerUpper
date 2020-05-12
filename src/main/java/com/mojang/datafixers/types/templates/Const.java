@@ -14,10 +14,12 @@ import com.mojang.datafixers.optics.profunctors.AffineP;
 import com.mojang.datafixers.optics.profunctors.Profunctor;
 import com.mojang.datafixers.types.Type;
 import com.mojang.datafixers.types.families.TypeFamily;
+import com.mojang.datafixers.util.Pool;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public final class Const implements TypeTemplate {
     private final Type<?> type;
@@ -68,7 +70,7 @@ public final class Const implements TypeTemplate {
 
     @Override
     public <FT, FR> Either<TypeTemplate, Type.FieldNotFoundException> findFieldOrType(final int index, @Nullable final String name, final Type<FT> type, final Type<FR> resultType) {
-        return DSL.fieldFinder(name, type).findType(this.type, resultType, false).mapLeft(field -> new Const(field.tType()));
+        return DSL.fieldFinder(name, type).findType(this.type, resultType, false).mapLeft(field -> Pool.CONST_POOL.create(new Const.CreateInfo(field.tType())));
     }
 
     @Override
@@ -104,6 +106,32 @@ public final class Const implements TypeTemplate {
         @Override
         public TypeTemplate buildTemplate() {
             return DSL.constType(this);
+        }
+    }
+
+    public static class CreateInfo implements Supplier<Const> {
+        private final Type<?> type;
+
+        public CreateInfo(Type<?> type) {
+            this.type = type;
+        }
+
+        @Override
+        public Const get() {
+            return new Const(this.type);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return type.equals(that.type);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type);
         }
     }
 }

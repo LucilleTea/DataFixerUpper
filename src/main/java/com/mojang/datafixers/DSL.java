@@ -5,6 +5,7 @@ package com.mojang.datafixers;
 import com.google.common.collect.Maps;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
+import com.mojang.datafixers.util.Pool;
 import com.mojang.datafixers.util.Unit;
 import com.mojang.datafixers.kinds.App2;
 import com.mojang.datafixers.schemas.Schema;
@@ -92,7 +93,7 @@ public interface DSL {
     }
 
     static TypeTemplate nil() {
-        return constType(Instances.NIL_DROP);
+        return Instances.NIL_DROP_CONST;
     }
 
     static Type<Unit> nilType() {
@@ -100,7 +101,7 @@ public interface DSL {
     }
 
     static TypeTemplate remainder() {
-        return constType(Instances.NIL_SAVE);
+        return Instances.NIL_SAVE_CONST;
     }
 
     static Type<Dynamic<?>> remainderType() {
@@ -108,11 +109,11 @@ public interface DSL {
     }
 
     static TypeTemplate check(final String name, final int index, final TypeTemplate element) {
-        return new Check(name, index, element);
+        return Pool.CHECK_POOL.create(new Check.CreateInfo(name, index, element));
     }
 
     static TypeTemplate compoundList(final TypeTemplate element) {
-        return compoundList(constType(string()), element);
+        return compoundList(Instances.STRING_CONST, element);
     }
 
     static <V> CompoundList.CompoundListType<String, V> compoundList(final Type<V> value) {
@@ -120,7 +121,7 @@ public interface DSL {
     }
 
     static TypeTemplate compoundList(final TypeTemplate key, final TypeTemplate element) {
-        return and(new CompoundList(key, element), remainder());
+        return and(Pool.COMPOUND_LIST_POOL.create(new CompoundList.CreateInfo(key, element)), remainder());
     }
 
     static <K, V> CompoundList.CompoundListType<K, V> compoundList(final Type<K> key, final Type<V> value) {
@@ -128,11 +129,11 @@ public interface DSL {
     }
 
     static TypeTemplate constType(final Type<?> type) {
-        return new Const(type);
+        return Pool.CONST_POOL.create(new Const.CreateInfo(type));
     }
 
     static TypeTemplate hook(final TypeTemplate template, final Hook.HookFunction preRead, final Hook.HookFunction postWrite) {
-        return new Hook(template, preRead, postWrite);
+        return Pool.HOOK_POOL.create(new Hook.CreateInfo(template, preRead, postWrite));
     }
 
     static <A> Type<A> hook(final Type<A> type, final Hook.HookFunction preRead, final Hook.HookFunction postWrite) {
@@ -140,7 +141,7 @@ public interface DSL {
     }
 
     static TypeTemplate list(final TypeTemplate element) {
-        return new List(element);
+        return Pool.LIST_POOL.create(new List.CreateInfo(element));
     }
 
     static <A> List.ListType<A> list(final Type<A> first) {
@@ -148,7 +149,7 @@ public interface DSL {
     }
 
     static TypeTemplate named(final String name, final TypeTemplate element) {
-        return new Named(name, element);
+        return Pool.NAMED_POOL.create(new Named.CreateInfo(name, element));
     }
 
     static <A> Type<Pair<String, A>> named(final String name, final Type<A> element) {
@@ -156,7 +157,7 @@ public interface DSL {
     }
 
     static TypeTemplate and(final TypeTemplate first, final TypeTemplate second) {
-        return new Product(first, second);
+        return Pool.PRODUCT_POOL.create(new Product.CreateInfo(first, second));
     }
 
     static TypeTemplate and(final TypeTemplate first, final TypeTemplate... rest) {
@@ -187,11 +188,11 @@ public interface DSL {
     }
 
     static TypeTemplate id(final int index) {
-        return new RecursivePoint(index);
+        return Pool.RECURSIVE_POINT_POOL.create(new RecursivePoint.CreateInfo(index));
     }
 
     static TypeTemplate or(final TypeTemplate left, final TypeTemplate right) {
-        return new Sum(left, right);
+        return Pool.SUM_POOL.create(new Sum.CreateInfo(left, right));
     }
 
     static <F, G> Type<Either<F, G>> or(final Type<F> first, final Type<G> second) {
@@ -199,15 +200,16 @@ public interface DSL {
     }
 
     static TypeTemplate field(final String name, final TypeTemplate element) {
-        return new Tag(name, element);
+        return Pool.TAG_POOL.create(new Tag.CreateInfo(name, element));
     }
 
     static <A> Tag.TagType<A> field(final String name, final Type<A> element) {
         return new Tag.TagType<>(name, element);
     }
 
+    @SuppressWarnings("unchecked")
     static <K> TaggedChoice<K> taggedChoice(final String name, final Type<K> keyType, final Object2ObjectMap<K, TypeTemplate> templates) {
-        return new TaggedChoice<>(name, keyType, templates);
+        return (TaggedChoice<K>) Pool.TAGGED_CHOICE_POOL.create(new TaggedChoice.CreateInfo<>(name, keyType, templates));
     }
 
     static <K> TaggedChoice<K> taggedChoiceLazy(final String name, final Type<K> keyType, final Map<K, Supplier<TypeTemplate>> templates) {
@@ -469,6 +471,10 @@ public interface DSL {
         private static final Type<String> NAMESPACED_STRING_TYPE = new NamespacedStringType();
         private static final Type<Unit> NIL_DROP = new NilDrop();
         private static final Type<Dynamic<?>> NIL_SAVE = new NilSave();
+
+        private static final TypeTemplate NIL_DROP_CONST = new Const(Instances.NIL_DROP);
+        private static final TypeTemplate NIL_SAVE_CONST = new Const(Instances.NIL_SAVE);
+        private static final TypeTemplate STRING_CONST = new Const(Instances.STRING_TYPE);
 
         private static final OpticFinder<Dynamic<?>> REMAINDER_FINDER = remainderType().finder();
 

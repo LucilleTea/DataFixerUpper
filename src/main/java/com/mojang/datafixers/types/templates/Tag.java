@@ -15,6 +15,7 @@ import com.mojang.datafixers.types.DynamicOps;
 import com.mojang.datafixers.types.Type;
 import com.mojang.datafixers.types.families.RecursiveTypeFamily;
 import com.mojang.datafixers.types.families.TypeFamily;
+import com.mojang.datafixers.util.Pool;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -22,13 +23,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class Tag implements TypeTemplate {
     private final String name;
     private final TypeTemplate element;
 
-    public Tag(final String name, final TypeTemplate element) {
+    private Tag(final String name, final TypeTemplate element) {
         this.name = name;
         this.element = element;
     }
@@ -84,7 +86,7 @@ public final class Tag implements TypeTemplate {
         if (element instanceof Const) {
             final Const c = (Const) element;
             if (Objects.equals(type, c.type())) {
-                return Either.left(new Tag(name, new Const(resultType)));
+                return Either.left(Pool.TAG_POOL.create(new Tag.CreateInfo(name, Pool.CONST_POOL.create(new Const.CreateInfo(resultType)))));
             }
             return Either.right(new Type.FieldNotFoundException("don't match"));
         }
@@ -120,7 +122,7 @@ public final class Tag implements TypeTemplate {
             return false;
         }
         final Tag that = (Tag) obj;
-        return Objects.equals(name, that.name) && Objects.equals(element, that.element);
+        return Objects.equals(name, that.name) && element == that.element;
     }
 
     @Override
@@ -251,6 +253,35 @@ public final class Tag implements TypeTemplate {
 
         public Type<A> element() {
             return element;
+        }
+    }
+
+    public static class CreateInfo implements Supplier<Tag> {
+        private final String name;
+        private final TypeTemplate element;
+
+        public CreateInfo(String name, TypeTemplate element) {
+            this.name = name;
+            this.element = element;
+        }
+
+        @Override
+        public Tag get() {
+            return new Tag(this.name, this.element);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return name.equals(that.name) &&
+                    element.equals(that.element);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, element);
         }
     }
 }

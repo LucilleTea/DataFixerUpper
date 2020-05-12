@@ -20,13 +20,14 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public final class Check implements TypeTemplate {
     private final String name;
     private final int index;
     private final TypeTemplate element;
 
-    public Check(final String name, final int index, final TypeTemplate element) {
+    private Check(final String name, final int index, final TypeTemplate element) {
         this.name = name;
         this.index = index;
         this.element = element;
@@ -92,7 +93,7 @@ public final class Check implements TypeTemplate {
             return false;
         }
         final Check that = (Check) obj;
-        return Objects.equals(name, that.name) && index == that.index && Objects.equals(element, that.element);
+        return index == that.index && element == that.element && Objects.equals(name, that.name);
     }
 
     @Override
@@ -245,6 +246,38 @@ public final class Check implements TypeTemplate {
         @Override
         public int hashCode() {
             return Objects.hash(index, expectedIndex, delegate);
+        }
+    }
+
+    public static class CreateInfo implements Supplier<Check> {
+        private final String name;
+        private final int index;
+        private final TypeTemplate element;
+
+        public CreateInfo(String name, int index, TypeTemplate element) {
+            this.name = name;
+            this.index = index;
+            this.element = element;
+        }
+
+        @Override
+        public Check get() {
+            return new Check(this.name, this.index, this.element);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return index==that.index &&
+                    name.equals(that.name) &&
+                    element.equals(that.element);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, index, element);
         }
     }
 }

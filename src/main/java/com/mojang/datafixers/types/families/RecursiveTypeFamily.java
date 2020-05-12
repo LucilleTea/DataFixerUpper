@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public final class RecursiveTypeFamily implements TypeFamily {
     private final String name;
@@ -204,12 +205,40 @@ public final class RecursiveTypeFamily implements TypeFamily {
         if (!(o instanceof RecursiveTypeFamily)) {
             return false;
         }
-        final RecursiveTypeFamily family = (RecursiveTypeFamily) o;
-        return Objects.equals(template, family.template);
+        return template == ((RecursiveTypeFamily) o).template;
     }
 
     @Override
     public int hashCode() {
         return hashCode;
+    }
+
+    public static class CreateInfo implements Supplier<RecursiveTypeFamily> {
+        private final String name;
+        private final TypeTemplate template;
+
+        public CreateInfo(String name, TypeTemplate template) {
+            this.name = name;
+            this.template = template;
+        }
+
+        @Override
+        public RecursiveTypeFamily get() {
+            return new RecursiveTypeFamily(this.name, this.template);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return name.equals(that.name) &&
+                    template.equals(that.template);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, template);
+        }
     }
 }

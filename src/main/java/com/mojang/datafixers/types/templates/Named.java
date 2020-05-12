@@ -25,12 +25,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public final class Named implements TypeTemplate {
     private final String name;
     private final TypeTemplate element;
 
-    public Named(final String name, final TypeTemplate element) {
+    private Named(final String name, final TypeTemplate element) {
         this.name = name;
         this.element = element;
     }
@@ -72,11 +73,11 @@ public final class Named implements TypeTemplate {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof Named)) {
+        if (!(obj instanceof CreateInfo)) {
             return false;
         }
-        final Named that = (Named) obj;
-        return Objects.equals(name, that.name) && Objects.equals(element, that.element);
+        final CreateInfo that = (CreateInfo) obj;
+        return element == that.element && Objects.equals(name, that.name);
     }
 
     @Override
@@ -211,6 +212,35 @@ public final class Named implements TypeTemplate {
                 optic.bType(),
                 Optics.<String, A, B>proj2().composeUnchecked(optic.optic())
             );
+        }
+    }
+
+    public static class CreateInfo implements Supplier<Named> {
+        private final String name;
+        private final TypeTemplate element;
+
+        public CreateInfo(String name, TypeTemplate element) {
+            this.name = name;
+            this.element = element;
+        }
+
+        @Override
+        public Named get() {
+            return new Named(this.name, this.element);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this==o) return true;
+            if (o==null || getClass()!=o.getClass()) return false;
+            CreateInfo that = (CreateInfo) o;
+            return name.equals(that.name) &&
+                    element.equals(that.element);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, element);
         }
     }
 }

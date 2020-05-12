@@ -12,6 +12,7 @@ import com.mojang.datafixers.types.families.TypeFamily;
 import com.mojang.datafixers.types.templates.RecursivePoint;
 import com.mojang.datafixers.types.templates.TaggedChoice;
 import com.mojang.datafixers.types.templates.TypeTemplate;
+import com.mojang.datafixers.util.Pool;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -48,7 +49,7 @@ public class Schema {
         }
 
         final TypeTemplate choice = templates.stream().reduce(DSL::or).get();
-        final TypeFamily family = new RecursiveTypeFamily(name, choice);
+        final TypeFamily family = Pool.RECURSIVE_TYPE_FAMILY_POOL.create(new RecursiveTypeFamily.CreateInfo(name, choice));
 
         for (final String name : TYPE_TEMPLATES.keySet()) {
             final Type<?> type;
