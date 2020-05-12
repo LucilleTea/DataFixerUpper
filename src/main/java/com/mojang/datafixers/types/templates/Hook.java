@@ -76,23 +76,6 @@ public final class Hook implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof Hook)) {
-            return false;
-        }
-        final Hook that = (Hook) obj;
-        return element == that.element && Objects.equals(preRead, that.preRead) && Objects.equals(postWrite, that.postWrite);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(element, preRead, postWrite);
-    }
-
-    @Override
     public String toString() {
         return "Hook[" + element + ", " + preRead + ", " + postWrite + "]";
     }
@@ -101,6 +84,7 @@ public final class Hook implements TypeTemplate {
         private final Type<A> delegate;
         private final HookFunction preRead;
         private final HookFunction postWrite;
+        private int hashCode;
 
         public HookType(final Type<A> delegate, final HookFunction preRead, final HookFunction postWrite) {
             this.delegate = delegate;
@@ -197,7 +181,10 @@ public final class Hook implements TypeTemplate {
 
         @Override
         public int hashCode() {
-            return Objects.hash(delegate, preRead, postWrite);
+            if (hashCode == 0) {
+                hashCode = Objects.hash(delegate, preRead, postWrite);
+            }
+            return hashCode;
         }
     }
 
@@ -222,14 +209,18 @@ public final class Hook implements TypeTemplate {
             if (this==o) return true;
             if (o==null || getClass()!=o.getClass()) return false;
             CreateInfo that = (CreateInfo) o;
-            return element.equals(that.element) &&
+            return element == that.element &&
                     preRead.equals(that.preRead) &&
                     postWrite.equals(that.postWrite);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(element, preRead, postWrite);
+            int result = 17;
+            result = 37 * result + element.hashCode();
+            result = 37 * result * preRead.hashCode();
+            result = 37 * result * postWrite.hashCode();
+            return result;
         }
     }
 }

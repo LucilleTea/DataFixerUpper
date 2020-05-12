@@ -85,23 +85,6 @@ public final class Check implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof Check)) {
-            return false;
-        }
-        final Check that = (Check) obj;
-        return index == that.index && element == that.element && Objects.equals(name, that.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, index, element);
-    }
-
-    @Override
     public String toString() {
         return "Tag[" + name + ", " + index + ": " + element + "]";
     }
@@ -111,6 +94,7 @@ public final class Check implements TypeTemplate {
         private final int index;
         private final int expectedIndex;
         private final Type<A> delegate;
+        private int hashCode;
 
         public CheckType(final String name, final int index, final int expectedIndex, final Type<A> delegate) {
             this.name = name;
@@ -245,7 +229,10 @@ public final class Check implements TypeTemplate {
 
         @Override
         public int hashCode() {
-            return Objects.hash(index, expectedIndex, delegate);
+            if (hashCode == 0) {
+                hashCode = Objects.hash(index, expectedIndex, delegate);
+            }
+            return hashCode;
         }
     }
 
@@ -270,14 +257,19 @@ public final class Check implements TypeTemplate {
             if (this==o) return true;
             if (o==null || getClass()!=o.getClass()) return false;
             CreateInfo that = (CreateInfo) o;
-            return index==that.index &&
-                    name.equals(that.name) &&
-                    element.equals(that.element);
+            return index == that.index &&
+                    element == that.element &&
+                    name.equals(that.name);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, index, element);
+            int result = 17;
+            result = 37 * result + index;
+            result = 37 * result + element.hashCode();
+            result = 37 * result * name.hashCode();
+
+            return result;
         }
     }
 }

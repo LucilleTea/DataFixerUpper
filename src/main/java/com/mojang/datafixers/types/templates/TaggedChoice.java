@@ -105,23 +105,6 @@ public final class TaggedChoice<K> implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof TaggedChoice)) {
-            return false;
-        }
-        final TaggedChoice<?> other = (TaggedChoice<?>) obj;
-        return Objects.equals(name, other.name) && Objects.equals(keyType, other.keyType) && Objects.equals(templates, other.templates);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, keyType, templates);
-    }
-
-    @Override
     public String toString() {
         return "TaggedChoice[" + name + ", " + Joiner.on(", ").withKeyValueSeparator(" -> ").join(templates) + "]";
     }
@@ -130,13 +113,12 @@ public final class TaggedChoice<K> implements TypeTemplate {
         private final String name;
         private final Type<K> keyType;
         protected final Object2ObjectMap<K, Type<?>> types;
-        private final int hashCode;
+        private int hashCode;
 
         public TaggedChoiceType(final String name, final Type<K> keyType, final Object2ObjectMap<K, Type<?>> types) {
             this.name = name;
             this.keyType = keyType;
             this.types = types;
-            hashCode = Objects.hash(name, keyType, types);
         }
 
         @Override
@@ -433,6 +415,9 @@ public final class TaggedChoice<K> implements TypeTemplate {
 
         @Override
         public int hashCode() {
+            if (hashCode == 0) {
+                hashCode = Objects.hash(name, keyType, types);
+            }
             return hashCode;
         }
 

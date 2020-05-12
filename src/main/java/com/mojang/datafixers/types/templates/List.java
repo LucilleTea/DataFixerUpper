@@ -97,22 +97,13 @@ public final class List implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        return obj instanceof List && element == ((List) obj).element;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(element);
-    }
-
-    @Override
     public String toString() {
         return "List[" + element + "]";
     }
 
     public static final class ListType<A> extends Type<java.util.List<A>> {
         protected final Type<A> element;
+        private int hashCode;
 
         public ListType(final Type<A> element) {
             this.element = element;
@@ -187,7 +178,10 @@ public final class List implements TypeTemplate {
 
         @Override
         public int hashCode() {
-            return element.hashCode();
+            if (hashCode == 0) {
+                hashCode = element.hashCode();
+            }
+            return hashCode;
         }
 
         public Type<A> getElement() {
@@ -212,12 +206,12 @@ public final class List implements TypeTemplate {
             if (this==o) return true;
             if (o==null || getClass()!=o.getClass()) return false;
             CreateInfo that = (CreateInfo) o;
-            return element.equals(that.element);
+            return element == that.element;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(element);
+            return element.hashCode();
         }
     }
 }

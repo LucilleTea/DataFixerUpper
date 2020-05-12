@@ -536,9 +536,11 @@ public interface PointFreeRule {
 
     final class Seq implements PointFreeRule {
         private final List<Supplier<PointFreeRule>> rules;
+        private final int hashCode;
 
         public Seq(final List<Supplier<PointFreeRule>> rules) {
             this.rules = ImmutableList.copyOf(rules);
+            this.hashCode = rules.hashCode();
         }
 
         @Override
@@ -568,7 +570,7 @@ public interface PointFreeRule {
 
         @Override
         public int hashCode() {
-            return Objects.hash(rules);
+            return this.hashCode;
         }
     }
 
@@ -579,10 +581,12 @@ public interface PointFreeRule {
     final class OrElse implements PointFreeRule {
         protected final PointFreeRule first;
         protected final PointFreeRule second;
+        private final int hashCode;
 
         public OrElse(final PointFreeRule first, final PointFreeRule second) {
             this.first = first;
             this.second = second;
+            this.hashCode = Objects.hash(first, second);
         }
 
         @Override
@@ -608,16 +612,18 @@ public interface PointFreeRule {
 
         @Override
         public int hashCode() {
-            return Objects.hash(first, second);
+            return this.hashCode;
         }
     }
 
 
     final class OrElseStrict implements PointFreeRule {
         protected final PointFreeRule rule;
+        private final int hashCode;
 
         public OrElseStrict(final PointFreeRule rule) {
             this.rule = rule;
+            this.hashCode = rule.hashCode();
         }
 
         @Override
@@ -643,7 +649,7 @@ public interface PointFreeRule {
 
         @Override
         public int hashCode() {
-            return Objects.hash(rule);
+            return this.hashCode;
         }
     }
 
@@ -669,9 +675,11 @@ public interface PointFreeRule {
 
     final class All implements PointFreeRule {
         private final PointFreeRule rule;
+        private final int hashCode;
 
         public All(final PointFreeRule rule) {
             this.rule = rule;
+            this.hashCode = rule.hashCode();
         }
 
         @Override
@@ -693,15 +701,17 @@ public interface PointFreeRule {
 
         @Override
         public int hashCode() {
-            return rule.hashCode();
+            return this.hashCode;
         }
     }
 
     final class One implements PointFreeRule {
         private final PointFreeRule rule;
+        private final int hashCode;
 
         public One(final PointFreeRule rule) {
             this.rule = rule;
+            this.hashCode = rule.hashCode();
         }
 
         @Override
@@ -723,15 +733,17 @@ public interface PointFreeRule {
 
         @Override
         public int hashCode() {
-            return rule.hashCode();
+            return this.hashCode;
         }
     }
 
     final class Many implements PointFreeRule {
         private final PointFreeRule rule;
+        private final int hashCode;
 
         public Many(final PointFreeRule rule) {
             this.rule = rule;
+            this.hashCode = rule.hashCode();
         }
 
         @Override
@@ -763,7 +775,7 @@ public interface PointFreeRule {
 
         @Override
         public int hashCode() {
-            return Objects.hash(rule);
+            return this.hashCode;
         }
     }
 }

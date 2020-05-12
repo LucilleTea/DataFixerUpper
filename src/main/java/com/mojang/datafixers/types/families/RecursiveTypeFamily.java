@@ -233,7 +233,7 @@ public final class RecursiveTypeFamily implements TypeFamily {
             if (o==null || getClass()!=o.getClass()) return false;
             CreateInfo that = (CreateInfo) o;
             return name.equals(that.name) &&
-                    template.equals(that.template);
+                    template == that.template;
         }
 
         @Override

@@ -114,23 +114,6 @@ public final class Tag implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof Tag)) {
-            return false;
-        }
-        final Tag that = (Tag) obj;
-        return Objects.equals(name, that.name) && element == that.element;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, element);
-    }
-
-    @Override
     public String toString() {
         return "NameTag[" + name + ": " + element + "]";
     }
@@ -138,6 +121,7 @@ public final class Tag implements TypeTemplate {
     public static final class TagType<A> extends Type<A> {
         protected final String name;
         protected final Type<A> element;
+        private int hashCode;
 
         public TagType(final String name, final Type<A> element) {
             this.name = name;
@@ -211,7 +195,10 @@ public final class Tag implements TypeTemplate {
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, element);
+            if (hashCode == 0) {
+                hashCode = Objects.hash(name, element);
+            }
+            return hashCode;
         }
 
         public <A2> TagType<A2> map(final Function<? super Type<A>, ? extends Type<A2>> function) {
@@ -275,13 +262,15 @@ public final class Tag implements TypeTemplate {
             if (this==o) return true;
             if (o==null || getClass()!=o.getClass()) return false;
             CreateInfo that = (CreateInfo) o;
-            return name.equals(that.name) &&
-                    element.equals(that.element);
+            return element == that.element && name.equals(that.name);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, element);
+            int result = 17;
+            result = 31 * result + name.hashCode();
+            result = 31 * result + element.hashCode();
+            return result;
         }
     }
 }

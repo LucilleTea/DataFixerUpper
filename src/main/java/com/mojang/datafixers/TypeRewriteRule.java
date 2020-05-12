@@ -63,11 +63,11 @@ public interface TypeRewriteRule {
 
     final class Seq implements TypeRewriteRule {
         protected final List<TypeRewriteRule> rules;
-        private final int hashCode;
+        protected final int hashCode;
 
         public Seq(final List<TypeRewriteRule> rules) {
             this.rules = ImmutableList.copyOf(rules);
-            hashCode = this.rules.hashCode();
+            this.hashCode = rules.hashCode();
         }
 
         @Override
@@ -101,7 +101,7 @@ public interface TypeRewriteRule {
 
         @Override
         public int hashCode() {
-            return hashCode;
+            return this.hashCode;
         }
     }
 
@@ -112,12 +112,12 @@ public interface TypeRewriteRule {
     final class OrElse implements TypeRewriteRule {
         protected final TypeRewriteRule first;
         protected final TypeRewriteRule second;
-        private final int hashCode;
+        protected final int hashCode;
 
         public OrElse(final TypeRewriteRule first, final TypeRewriteRule second) {
             this.first = first;
             this.second = second;
-            hashCode = Objects.hash(first, second);
+            this.hashCode = Objects.hash(first, second);
         }
 
         @Override
@@ -143,7 +143,7 @@ public interface TypeRewriteRule {
 
         @Override
         public int hashCode() {
-            return hashCode;
+            return this.hashCode;
         }
     }
 
@@ -179,7 +179,7 @@ public interface TypeRewriteRule {
             this.rule = rule;
             this.recurse = recurse;
             this.checkIndex = checkIndex;
-            hashCode = Objects.hash(rule, recurse, checkIndex);
+            this.hashCode = Objects.hash(rule, recurse, checkIndex);
         }
 
         @Override
@@ -201,15 +201,17 @@ public interface TypeRewriteRule {
 
         @Override
         public int hashCode() {
-            return hashCode;
+            return this.hashCode;
         }
     }
 
     class One implements TypeRewriteRule {
         private final TypeRewriteRule rule;
+        private final int hashCode;
 
         public One(final TypeRewriteRule rule) {
             this.rule = rule;
+            this.hashCode = rule.hashCode();
         }
 
         @Override
@@ -231,17 +233,19 @@ public interface TypeRewriteRule {
 
         @Override
         public int hashCode() {
-            return rule.hashCode();
+            return this.hashCode;
         }
     }
 
     class CheckOnce implements TypeRewriteRule {
         private final TypeRewriteRule rule;
         private final Consumer<Type<?>> onFail;
+        private final int hashCode;
 
         public CheckOnce(final TypeRewriteRule rule, final Consumer<Type<?>> onFail) {
             this.rule = rule;
             this.onFail = onFail;
+            this.hashCode = rule.hashCode();
         }
 
         @Override
@@ -263,7 +267,7 @@ public interface TypeRewriteRule {
 
         @Override
         public int hashCode() {
-            return Objects.hash(rule);
+            return this.hashCode;
         }
     }
 
@@ -279,7 +283,7 @@ public interface TypeRewriteRule {
             this.optimizationRule = optimizationRule;
             this.recurse = recurse;
             this.checkIndex = checkIndex;
-            hashCode = Objects.hash(rule, optimizationRule, recurse, checkIndex);
+            this.hashCode = Objects.hash(rule, optimizationRule, recurse, checkIndex);
         }
 
         @Override
@@ -296,12 +300,12 @@ public interface TypeRewriteRule {
                 return false;
             }
             final Everywhere that = (Everywhere) obj;
-            return Objects.equals(rule, that.rule) && Objects.equals(optimizationRule, that.optimizationRule) && recurse == that.recurse && checkIndex == that.checkIndex;
+            return recurse == that.recurse && checkIndex == that.checkIndex && Objects.equals(rule, that.rule) && Objects.equals(optimizationRule, that.optimizationRule);
         }
 
         @Override
         public int hashCode() {
-            return hashCode;
+            return this.hashCode;
         }
     }
 
@@ -313,7 +317,7 @@ public interface TypeRewriteRule {
         public IfSame(final Type<B> targetType, final RewriteResult<B, ?> value) {
             this.targetType = targetType;
             this.value = value;
-            hashCode = Objects.hash(targetType, value);
+            this.hashCode = Objects.hash(targetType, value);
         }
 
         @Override
@@ -335,7 +339,7 @@ public interface TypeRewriteRule {
 
         @Override
         public int hashCode() {
-            return hashCode;
+            return this.hashCode;
         }
     }
 }

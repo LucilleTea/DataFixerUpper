@@ -54,7 +54,11 @@ public class Pair<F, S> implements App<Pair.Mu<S>, F> {
 
     @Override
     public int hashCode() {
-        return com.google.common.base.Objects.hashCode(first, second);
+        int result = 17;
+        result = 31 * result + first.hashCode();
+        result = 31 * result + second.hashCode();
+
+        return result;
     }
 
     public <F2> Pair<F2, S> mapFirst(final Function<? super F, ? extends F2> function) {

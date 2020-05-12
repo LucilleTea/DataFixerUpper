@@ -89,16 +89,6 @@ public final class CompoundList implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        return obj instanceof CompoundList && element == ((CompoundList) obj).element;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(element);
-    }
-
-    @Override
     public String toString() {
         return "CompoundList[" + element + "]";
     }
@@ -106,6 +96,7 @@ public final class CompoundList implements TypeTemplate {
     public static final class CompoundListType<K, V> extends Type<List<Pair<K, V>>> {
         protected final Type<K> key;
         protected final Type<V> element;
+        private int hashCode;
 
         public CompoundListType(final Type<K> key, final Type<V> element) {
             this.key = key;
@@ -215,7 +206,10 @@ public final class CompoundList implements TypeTemplate {
 
         @Override
         public int hashCode() {
-            return Objects.hash(key, element);
+            if (hashCode == 0) {
+                hashCode = Objects.hash(key, element);
+            }
+            return hashCode;
         }
 
         public Type<K> getKey() {
@@ -246,13 +240,12 @@ public final class CompoundList implements TypeTemplate {
             if (this==o) return true;
             if (o==null || getClass()!=o.getClass()) return false;
             CreateInfo that = (CreateInfo) o;
-            return key.equals(that.key) &&
-                    element.equals(that.element);
+            return key == that.key && element == that.element;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(key, element);
+            return element.hashCode();
         }
     }
 }

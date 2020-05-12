@@ -89,16 +89,6 @@ public final class RecursivePoint implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        return obj instanceof RecursivePoint && index == ((RecursivePoint) obj).index;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(index);
-    }
-
-    @Override
     public String toString() {
         return "Id[" + index + "]";
     }
@@ -113,6 +103,7 @@ public final class RecursivePoint implements TypeTemplate {
         private final Supplier<Type<A>> delegate;
         @Nullable
         private volatile Type<A> type;
+        private int hashCode;
 
         public RecursivePointType(final RecursiveTypeFamily family, final int index, final Supplier<Type<A>> delegate) {
             this.family = family;
@@ -267,7 +258,10 @@ public final class RecursivePoint implements TypeTemplate {
 
         @Override
         public int hashCode() {
-            return Objects.hash(family, index);
+            if (hashCode == 0) {
+                hashCode = Objects.hash(family, index);
+            }
+            return hashCode;
         }
 
         public View<A, A> in() {
@@ -301,7 +295,7 @@ public final class RecursivePoint implements TypeTemplate {
 
         @Override
         public int hashCode() {
-            return Objects.hash(index);
+            return 17 + (index * 37);
         }
     }
 }

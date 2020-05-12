@@ -134,23 +134,6 @@ public final class Product implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof Product)) {
-            return false;
-        }
-        final Product that = (Product) obj;
-        return f == that.f && g == that.g;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(f, g);
-    }
-
-    @Override
     public String toString() {
         return "(" + f + ", " + g + ")";
     }
@@ -301,13 +284,15 @@ public final class Product implements TypeTemplate {
             if (this==o) return true;
             if (o==null || getClass()!=o.getClass()) return false;
             CreateInfo that = (CreateInfo) o;
-            return f.equals(that.f) &&
-                    g.equals(that.g);
+            return f == that.f && g == that.g;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(f, g);
+            int result = 17;
+            result = 31 * result + f.hashCode();
+            result = 31 * result + g.hashCode();
+            return result;
         }
     }
 }

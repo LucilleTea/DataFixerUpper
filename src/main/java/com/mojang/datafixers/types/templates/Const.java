@@ -79,16 +79,6 @@ public final class Const implements TypeTemplate {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        return obj instanceof Const && Objects.equals(type, ((Const) obj).type);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(type);
-    }
-
-    @Override
     public String toString() {
         return "Const[" + type + "]";
     }
@@ -131,7 +121,7 @@ public final class Const implements TypeTemplate {
 
         @Override
         public int hashCode() {
-            return Objects.hash(type);
+            return type.hashCode();
         }
     }
 }
