@@ -15,13 +15,14 @@ import java.util.function.Function;
 
 public abstract class Functions {
     private static final Id<?> ID = new Id<>();
+    private static final Bang<?> BANG = new Bang<>();
 
     @SuppressWarnings("unchecked")
     public static <A, B, C> PointFree<Function<A, C>> comp(final Type<B> middleType, final PointFree<Function<B, C>> f1, final PointFree<Function<A, B>> f2) {
-        if (Objects.equals(f1, id())) {
+        if (isId(f1)) {
             return (PointFree<Function<A, C>>) (PointFree<?>) f2;
         }
-        if (Objects.equals(f2, id())) {
+        if (isId(f2)) {
             return (PointFree<Function<A, C>>) (PointFree<?>) f1;
         }
         return new Comp<>(middleType, f1, f2);
@@ -58,5 +59,9 @@ public abstract class Functions {
     @SuppressWarnings("unchecked")
     public static <A> PointFree<Function<A, A>> id() {
         return (Id<A>) ID;
+    }
+
+    public static boolean isId(PointFree<?> other) {
+        return other == ID;
     }
 }

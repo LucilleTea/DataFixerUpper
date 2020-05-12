@@ -145,7 +145,7 @@ public final class TaggedChoice<K> implements TypeTemplate {
             for (Map.Entry<K, Type<?>> e : Object2ObjectMaps.fastIterable(types)) {
                 Optional<? extends RewriteResult<?, ?>> k = rule.rewrite(e.getValue());
 
-                if (k.isPresent() && !Objects.equals(k.get().view().function(), Functions.id())) {
+                if (k.isPresent() && !Functions.isId(k.get().view().function())) {
                     if (map.put(e.getKey(), k.get())!=null) {
                         throw new IllegalStateException("Duplicate key");
                     }
