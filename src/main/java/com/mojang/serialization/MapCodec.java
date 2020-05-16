@@ -277,11 +277,11 @@ public abstract class MapCodec<A> extends CompressorHolder implements MapDecoder
         });
     }
 
-    static <A> MapCodec<A> unit(final A defaultValue) {
+    public static <A> MapCodec<A> unit(final A defaultValue) {
         return unit(() -> defaultValue);
     }
 
-    static <A> MapCodec<A> unit(final Supplier<A> defaultValue) {
+    public static <A> MapCodec<A> unit(final Supplier<A> defaultValue) {
         return MapCodec.of(Encoder.empty(), Decoder.unit(defaultValue));
     }
 }
