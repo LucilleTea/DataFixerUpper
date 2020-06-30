@@ -8,10 +8,6 @@ apply plugin: 'maven-publish'
 group = 'com.mojang'
 version = project.hasProperty('buildNumber') ? "${project.majorMinor}.${project.buildNumber}" : "${project.majorMinor}.0-SNAPSHOT"
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.0'
-}
-
 buildscript {
     repositories {
         mavenCentral()
